@@ -1,5 +1,56 @@
 # Progress
 
+## Review Cycle 2: All 7 Findings Resolved
+- FINDING-001 [CRITICAL]: Frontend registration now sends flat `{child_id, info_updated}` matching backend struct (fixes broken registration flow)
+- FINDING-002 [HIGH]: Device update handler enforces `X-Device-ID == deviceId` ownership check
+- FINDING-003 [HIGH]: Event List and Get handlers now require X-Device-ID and IsMember group membership check
+- FINDING-004 [MEDIUM]: Groups ListForDevice enforces `X-Device-ID == deviceId` ownership check
+- FINDING-005 [MEDIUM]: ListChildren refactored to use `scanChild()` helper, removing duplicated inline scan
+- FINDING-006 [LOW]: Added `backend/handlers/handlers_test.go` with 7 auth check tests (no DB required)
+- FINDING-007 [LOW]: Removed redundant `database := conn` alias in main.go
+- `go build ./... && go test ./...` passes; `npx expo export --platform web` passes
+
+## Review Cycle 1: All 15 Findings Resolved
+- FINDING-001 [CRITICAL]: Removed compiled binary from git; added backend/.gitignore
+- FINDING-002 [HIGH]: DB failure now calls log.Fatalf instead of continuing with nil DB
+- FINDING-003 [HIGH]: X-Device-ID auth check added to all children endpoints (List/Create/Update/Delete)
+- FINDING-004 [MEDIUM]: FCM notification data now includes eventId/groupId for deep-link navigation
+- FINDING-005 [MEDIUM]: Switched to getDevicePushTokenAsync() for native FCM/APNs tokens
+- FINDING-006 [MEDIUM]: Leave group calls DELETE /groups/{groupId}/leave on backend; added model+handler+route
+- FINDING-007 [MEDIUM]: RegisterChild verifies child.device_id matches calling device before upsert
+- FINDING-008 [MEDIUM]: ChildForm useEffect resets fields whenever visible/initial prop changes
+- FINDING-009 [MEDIUM]: Settings screen loads notification permission status on mount
+- FINDING-010 [MEDIUM]: All registration endpoints check group membership via event's group_id
+- FINDING-011 [LOW]: go mod tidy removed // indirect markers from direct dependencies
+- FINDING-012 [LOW]: backend/.gitignore added (covered with FINDING-001)
+- FINDING-013 [LOW]: Extracted shared formatDate to frontend/lib/utils.ts; updated both screens
+- FINDING-014 [LOW]: Added error banner + Retry to Children screen on backend fetch failure
+- FINDING-015 [LOW]: Event GET handler validates groupId URL param matches event.GroupID
+- go build ./... passes; npx expo export --platform web passes
+
+## Phase 16: Polish & Error Handling
+- `frontend/app/(tabs)/index.tsx`: Added `error` state + amber error banner with Retry button; catch block now falls back to local cache and shows the banner
+- `frontend/app/group/[groupId].tsx`: Added `error` state + amber error banner with Retry button when group/event load fails
+- `frontend/app/event/[eventId].tsx`: Added `error` state + inline amber error banner with Retry button when event detail load fails
+- `frontend/components/CreateEventModal.tsx`: Added `isValidDate()` validation for `event_date` and `rsvp_deadline` before submission; alerts user with clear message on invalid dates
+- `npx expo export --platform web` passes
+
+## Phase 13: Group Detail & Event Creation
+- `frontend/components/CreateEventModal.tsx`: slide-up modal for event title (required), description, date/time, location, RSVP deadline; calls POST /groups/{groupId}/events
+- `frontend/app/group/[groupId].tsx`: fetches group name + event list on focus; pull-to-refresh; tapping event navigates to Event Detail with groupId query param; Create Event button opens modal
+- `npx expo export --platform web` passes
+
+## Phase 14: Event Detail & Registration
+- `frontend/app/event/[eventId].tsx`: loads event details (groupId from query param), user's children (backend with local fallback), and user's registrations; "Yes" and "Info Updated" buttons register child; Remove unregisters; organizer view shows all registrations with child details (allergies, notes, info_updated badge)
+- `npx expo export --platform web` passes
+
+## Phase 15: Push Notifications (Frontend)
+- `frontend/lib/notifications.ts`: configures Notifications handler; `registerForPushNotifications()` requests permission and returns Expo push token
+- `frontend/lib/device.ts`: added `syncPushToken()` which calls `registerForPushNotifications()` and uploads token via PUT /devices/{deviceId}
+- `frontend/app/_layout.tsx`: calls `syncPushToken()` non-blocking on init; adds `addNotificationResponseReceivedListener` to navigate to event on notification tap
+- `frontend/app/(tabs)/settings.tsx`: added Push Notifications Switch toggle; enabling calls syncPushToken() and uploads token; disabling clears token on backend
+- `npx expo export --platform web` passes
+
 ## Phase 10: Settings & Display Name Screen
 - `frontend/app/_layout.tsx`: calls `initDevice()` on startup; shows `FirstLaunchModal` when no display name is set
 - `frontend/components/FirstLaunchModal.tsx`: modal prompting user to enter display name on first launch; saves locally + syncs to backend

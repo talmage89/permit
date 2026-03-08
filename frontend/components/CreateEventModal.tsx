@@ -36,6 +36,11 @@ export default function CreateEventModal({ groupId, visible, onCreated, onCancel
     setRsvpDeadline('');
   }
 
+  function isValidDate(value: string): boolean {
+    const d = new Date(value);
+    return !isNaN(d.getTime());
+  }
+
   async function handleCreate() {
     if (!title.trim()) {
       Alert.alert('Title required', 'Please enter an event title.');
@@ -43,6 +48,14 @@ export default function CreateEventModal({ groupId, visible, onCreated, onCancel
     }
     if (!eventDate.trim()) {
       Alert.alert('Date required', 'Please enter a date (e.g. 2025-06-15T10:00:00Z).');
+      return;
+    }
+    if (!isValidDate(eventDate.trim())) {
+      Alert.alert('Invalid date', 'Please enter a valid date (e.g. 2025-06-15T10:00:00Z).');
+      return;
+    }
+    if (rsvpDeadline.trim() && !isValidDate(rsvpDeadline.trim())) {
+      Alert.alert('Invalid RSVP deadline', 'Please enter a valid date for the RSVP deadline.');
       return;
     }
     setSaving(true);

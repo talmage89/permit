@@ -34,6 +34,7 @@ export default function EventDetailScreen() {
   const [allRegistrations, setAllRegistrations] = useState<Registration[]>([]);
   const [isOrganizer, setIsOrganizer] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -43,6 +44,7 @@ export default function EventDetailScreen() {
 
   async function loadAll() {
     setLoading(true);
+    setError(null);
     try {
       const did = await getDeviceId();
 
@@ -112,7 +114,7 @@ export default function EventDetailScreen() {
         }
       }
     } catch {
-      // keep previous state
+      setError('Failed to load event details. Please check your connection.');
     } finally {
       setLoading(false);
     }
@@ -170,6 +172,14 @@ export default function EventDetailScreen() {
     <>
       <Stack.Screen options={{ title: event?.title ?? 'Event' }} />
       <ScrollView style={styles.container}>
+        {error && (
+          <View style={styles.errorBanner}>
+            <Text style={styles.errorBannerText}>{error}</Text>
+            <TouchableOpacity onPress={loadAll}>
+              <Text style={styles.retryText}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        )}
         {event && (
           <View style={styles.eventHeader}>
             <Text style={styles.title}>{event.title}</Text>
@@ -321,4 +331,16 @@ const styles = StyleSheet.create({
   regName: { fontSize: 16, fontWeight: '500' },
   regDetail: { fontSize: 13, color: '#666', marginTop: 2 },
   infoBadge: { fontSize: 12, color: '#5856D6', marginTop: 2 },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFF3CD',
+    margin: 16,
+    marginBottom: 0,
+    borderRadius: 8,
+    padding: 10,
+  },
+  errorBannerText: { color: '#856404', fontSize: 13, flex: 1 },
+  retryText: { color: '#007AFF', fontSize: 13, fontWeight: '600', marginLeft: 8 },
 });

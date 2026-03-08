@@ -18,6 +18,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const [groups, setGroups] = useState<StoredGroup[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [createVisible, setCreateVisible] = useState(false);
   const [joinVisible, setJoinVisible] = useState(false);
 
@@ -29,6 +30,7 @@ export default function HomeScreen() {
 
   async function loadGroups() {
     setLoading(true);
+    setError(null);
     try {
       const deviceId = await getDeviceId();
       if (deviceId) {
@@ -49,7 +51,9 @@ export default function HomeScreen() {
         setGroups(await getGroups());
       }
     } catch {
-      setGroups(await getGroups());
+      const local = await getGroups();
+      setGroups(local);
+      setError('Could not refresh from server. Showing cached data.');
     } finally {
       setLoading(false);
     }
@@ -96,6 +100,14 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>My Groups</Text>
+      {error && (
+        <View style={styles.errorBanner}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity onPress={loadGroups}>
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      )}
       <FlatList
         data={groups}
         keyExtractor={(g) => g.id}
@@ -164,4 +176,15 @@ const styles = StyleSheet.create({
   button: { backgroundColor: '#007AFF', padding: 14, borderRadius: 8, alignItems: 'center' },
   secondaryButton: { backgroundColor: '#34C759' },
   buttonText: { color: '#fff', fontWeight: '600', fontSize: 16 },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFF3CD',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 12,
+  },
+  errorText: { color: '#856404', fontSize: 13, flex: 1 },
+  retryText: { color: '#007AFF', fontSize: 13, fontWeight: '600', marginLeft: 8 },
 });

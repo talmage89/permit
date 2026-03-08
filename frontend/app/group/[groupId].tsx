@@ -33,6 +33,7 @@ export default function GroupDetailScreen() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [createVisible, setCreateVisible] = useState(false);
 
   useFocusEffect(
@@ -44,12 +45,13 @@ export default function GroupDetailScreen() {
   async function loadData(isRefresh = false) {
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
+    setError(null);
     try {
       const [g, evts] = await Promise.all([api.groups.get(groupId), api.events.list(groupId)]);
       setGroup(g);
       setEvents(evts);
     } catch {
-      // keep previous state on error
+      setError('Failed to load group data. Please check your connection.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -78,6 +80,14 @@ export default function GroupDetailScreen() {
     <>
       <Stack.Screen options={{ title: group?.name ?? 'Group' }} />
       <View style={styles.container}>
+        {error && (
+          <View style={styles.errorBanner}>
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity onPress={() => loadData()}>
+              <Text style={styles.retryText}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        )}
         <Text style={styles.subtitle}>Upcoming Events</Text>
         <FlatList
           data={events}
@@ -145,4 +155,15 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   buttonText: { color: '#fff', fontWeight: '600', fontSize: 16 },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFF3CD',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 12,
+  },
+  errorText: { color: '#856404', fontSize: 13, flex: 1 },
+  retryText: { color: '#007AFF', fontSize: 13, fontWeight: '600', marginLeft: 8 },
 });

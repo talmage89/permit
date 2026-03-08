@@ -5,7 +5,7 @@ digraph Build {
   exit  [shape = "Msquare"]
 
   # --- Init ---
-  init [shape = "parallelogram", tool_command = "rm -rf .attractor/workspace && mkdir -p .attractor/workspace && cp SPEC.md .attractor/workspace/spec.md && echo '# Progress' > .attractor/workspace/progress.md && git rev-parse HEAD > .attractor/workspace/base-commit"]
+  init [shape = "parallelogram", tool_command = "rm -rf .attractor/workspace && mkdir -p .attractor/workspace && cp SPEC.md .attractor/workspace/spec.md && echo '# Progress' > .attractor/workspace/progress.md && echo '0' > .attractor/workspace/validation-round && git rev-parse HEAD > .attractor/workspace/base-commit"]
 
   # --- Plan + Audit loop ---
   plan  [shape = "box", prompt = "Read .attractor/prompts/build/plan.md and follow the instructions.", llm_model = "opus"]
@@ -26,6 +26,13 @@ digraph Build {
   test_merge  [shape = "tripleoctagon"]
 
   fix [shape = "box", prompt = "Read .attractor/prompts/build/fix.md and follow the instructions."]
+
+  # --- Harden: escalating validation loop ---
+  harden [shape = "box", prompt = "Read .attractor/prompts/build/harden.md and follow the instructions.", llm_model = "opus"]
+
+  # --- Security audit gate ---
+  security_audit [shape = "box", prompt = "Read .attractor/prompts/build/security-audit.md and follow the instructions.", llm_model = "opus"]
+  security_fix   [shape = "box", prompt = "Read .attractor/prompts/build/security-fix.md and follow the instructions."]
 
   # --- Wrapup ---
   wrapup [shape = "box", prompt = "Read .attractor/prompts/build/wrapup.md and follow the instructions."]
@@ -50,10 +57,20 @@ digraph Build {
   test_fanout -> test_d -> test_merge
   test_fanout -> test_e -> test_merge
 
-  test_merge -> wrapup [condition = "context.parallel.fail_count=0"]
+  test_merge -> harden [condition = "context.parallel.fail_count=0"]
   test_merge -> fix    [condition = "context.parallel.fail_count!=0"]
 
   fix -> test_plan
+
+  # Harden loop: keep testing with escalating difficulty until exhausted
+  harden -> test_plan      [condition = "context.hardening_complete!=true"]
+  harden -> security_audit [condition = "context.hardening_complete=true"]
+
+  # Security audit gate: must pass before wrapup
+  security_audit -> security_fix [condition = "context.security_passed!=true"]
+  security_audit -> wrapup       [condition = "context.security_passed=true"]
+
+  security_fix -> security_audit
 
   wrapup -> exit
 }

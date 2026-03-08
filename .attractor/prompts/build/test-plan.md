@@ -8,6 +8,9 @@ You are the test planning agent. Your job is to study what was built and create 
    - `.attractor/workspace/spec.md` — what was supposed to be built
    - `.attractor/workspace/progress.md` — what was actually built
    - `.attractor/workspace/base-commit` — the commit SHA from before this iteration
+   - `.attractor/workspace/validation-round` — the current hardening round number
+   - `.attractor/workspace/harden-guidance.md` — if it exists, the hardening agent's guidance on what to test next (THIS TAKES PRIORITY over the default suggestions below)
+   - `.attractor/workspace/harden-log.md` — if it exists, history of what was tested in prior rounds (DO NOT repeat the same scenarios)
 
    Then run `git diff $(cat .attractor/workspace/base-commit) HEAD --stat` to see which files changed.
 
@@ -28,13 +31,17 @@ You are the test planning agent. Your job is to study what was built and create 
    - **Secondary focus:** A second area that overlaps with another agent's primary.
    - **Specific test scenarios:** 3-5 concrete scenarios to investigate.
 
-### Suggested focus division
+### Suggested focus division (for round 1 — later rounds should follow harden-guidance.md)
 
 - **test_a: Backend API + Data integrity** — Spin up the Go server, hit every endpoint, verify CRUD for all resources, test relationships (e.g. deleting a child removes its registrations).
 - **test_b: Core user flows + Group security** — Test the full flow: create device -> create group -> join group -> create event -> register children. Test password validation, join codes, duplicate joins.
 - **test_c: Edge cases + Error handling** — Test malformed requests, missing fields, invalid UUIDs, expired RSVP deadlines, concurrent registrations, boundary conditions.
 - **test_d: Registration flow + Organizer view** — Deep-dive into the registration/permission slip flow. Test one-tap registration, "Info Updated" flag, organizer view of all registrations with child details, unregistration.
 - **test_e: Multi-device + Multi-group scenarios** — Test with multiple devices interacting with the same group. Multiple groups per device. Cross-group isolation. Verify data doesn't leak between groups or devices.
+
+### Hardening rounds (round 2+)
+
+If `harden-guidance.md` exists, it contains specific test dimensions the hardening agent wants explored. Use those as your primary guide for assigning focus areas instead of the defaults above. Create **entirely new scenarios** — do not recycle test plans from previous rounds. Check `harden-log.md` to see what was already covered.
 
 5. **Ensure coverage.** Verify that:
    - Every API endpoint has at least one agent testing it as a primary focus.

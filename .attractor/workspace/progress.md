@@ -1,5 +1,22 @@
 # Progress
 
+## Phase 10: Settings & Display Name Screen
+- `frontend/app/_layout.tsx`: calls `initDevice()` on startup; shows `FirstLaunchModal` when no display name is set
+- `frontend/components/FirstLaunchModal.tsx`: modal prompting user to enter display name on first launch; saves locally + syncs to backend
+- `frontend/app/(tabs)/settings.tsx`: loads display name from AsyncStorage on mount; save button writes to storage and syncs to API
+- `npx expo export --platform web` passes
+
+## Phase 11: Children Manager Screen
+- `frontend/components/ChildForm.tsx`: slide-up modal for add/edit with name (required), birthdate, allergies, notes
+- `frontend/app/(tabs)/children.tsx`: fetches children from backend on focus (falls back to local); list with edit (tap row) + remove button; syncs all operations to backend
+- `npx expo export --platform web` passes
+
+## Phase 12: Home Screen & Group Management
+- `frontend/components/CreateGroupModal.tsx`: group name + password form; calls POST /groups; saves to local storage
+- `frontend/components/JoinGroupModal.tsx`: join code + password form; calls POST /groups/join; saves to local storage
+- `frontend/app/(tabs)/index.tsx`: loads groups from backend on focus (local fallback); lists with join code; tap → Group Detail; long-press → leave; create/join buttons open modals
+- `npx expo export --platform web` passes
+
 ## Phase 1: Project Scaffolding & Go Module Setup
 - Initialized Go module `permit/backend` (Go 1.24)
 - `backend/main.go`: HTTP server with `/health` endpoint returning `{"status":"ok"}`

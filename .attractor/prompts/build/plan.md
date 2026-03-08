@@ -27,7 +27,7 @@ Permit is a React Native (Expo) + Go backend app for managing permission slips f
    - React Native frontend: Expo setup, navigation, screens (Home, Group Detail, Event Detail, Children Manager, Settings), local storage, API client, push notification registration
    - Integration: connecting frontend to backend endpoints
 5. **Write the plan.** Create or update `.attractor/workspace/plan.md` with the full set of phases.
-6. **Commit and push** the updated plan.
+6. **Commit and push** the updated plan. Always commit and push before exiting — never leave uncommitted changes.
 
 ## Status
 

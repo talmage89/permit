@@ -78,7 +78,7 @@ You are the hardening agent. After each successful test round (all 5 testers fou
    - Decision: continue / complete
    ```
 
-7. **Commit and push** your changes.
+7. **Commit and push** your changes. Always commit and push before exiting — never leave uncommitted changes.
 
 ## Status
 

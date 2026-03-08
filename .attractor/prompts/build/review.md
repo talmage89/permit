@@ -33,7 +33,7 @@ You are a code review agent. Perform a diff-based review of the Permit app imple
 5. **Write findings.** Create `.attractor/workspace/findings.md` with your results:
    - If issues found, list each with severity (CRITICAL/HIGH/MEDIUM/LOW) and a clear description of what's wrong and how to fix it.
    - If no issues found, write "No findings. Implementation matches specification."
-6. **Commit and push** any changes you made.
+6. **Commit and push** any changes you made. Always commit and push before exiting — never leave uncommitted changes.
 
 ## Status
 

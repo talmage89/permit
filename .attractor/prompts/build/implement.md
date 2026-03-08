@@ -11,7 +11,7 @@ You are an implementation agent building the Permit app. You do up to 3 phases o
    - `.attractor/workspace/findings.md` — if it exists, review findings to address first
 2. **Identify your work.** If `findings.md` exists with unresolved items, address those first — they take priority over new phases. Otherwise, find the next undone phase(s) from the plan.
 3. **Do the work.** Implement up to 3 phases per session (see batching rules below). Read existing code before modifying it. Follow patterns already established in the codebase.
-4. **Commit per phase.** After completing each phase, commit and push with a conventional commit message. Do not accumulate multiple phases into a single commit.
+4. **Commit and push per phase.** After completing each phase, commit and push IMMEDIATELY with a conventional commit message. Do not accumulate multiple phases into a single commit. Never exit with uncommitted changes. Losing work to an uncommitted change is unacceptable.
 5. **Validate the codebase.** After all phases are done, run appropriate checks:
    - For Go backend: `cd backend && go build ./... && go test ./...`
    - For React Native frontend: `cd frontend && npx expo export --platform web 2>&1 | head -20` (or equivalent build check)

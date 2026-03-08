@@ -4,18 +4,14 @@ digraph Build {
   start [shape = "Mdiamond"]
   exit  [shape = "Msquare"]
 
-  # --- Init ---
   init [shape = "parallelogram", tool_command = "rm -rf .attractor/workspace && mkdir -p .attractor/workspace && cp SPEC.md .attractor/workspace/spec.md && echo '# Progress' > .attractor/workspace/progress.md && echo '0' > .attractor/workspace/validation-round && git rev-parse HEAD > .attractor/workspace/base-commit"]
 
-  # --- Plan + Audit loop ---
   plan  [shape = "box", prompt = "Read .attractor/prompts/build/plan.md and follow the instructions.", llm_model = "opus"]
   audit [shape = "box", prompt = "Read .attractor/prompts/build/audit.md and follow the instructions.", llm_model = "opus"]
 
-  # --- Implement + Review loop ---
   implement [shape = "box", prompt = "Read .attractor/prompts/build/implement.md and follow the instructions."]
   review    [shape = "box", prompt = "Read .attractor/prompts/build/review.md and follow the instructions.", llm_model = "opus"]
 
-  # --- Validate: usage testing + bug fixing loop ---
   test_plan   [shape = "box", prompt = "Read .attractor/prompts/build/test-plan.md and follow the instructions.", llm_model = "opus"]
   test_fanout [shape = "component", max_parallel = "5"]
   test_a      [shape = "box", prompt = "Read .attractor/prompts/build/test.md and follow the instructions."]
@@ -27,17 +23,13 @@ digraph Build {
 
   fix [shape = "box", prompt = "Read .attractor/prompts/build/fix.md and follow the instructions."]
 
-  # --- Harden: escalating validation loop ---
   harden [shape = "box", prompt = "Read .attractor/prompts/build/harden.md and follow the instructions.", llm_model = "opus"]
 
-  # --- Security audit gate ---
   security_audit [shape = "box", prompt = "Read .attractor/prompts/build/security-audit.md and follow the instructions.", llm_model = "opus"]
   security_fix   [shape = "box", prompt = "Read .attractor/prompts/build/security-fix.md and follow the instructions."]
 
-  # --- Wrapup ---
   wrapup [shape = "box", prompt = "Read .attractor/prompts/build/wrapup.md and follow the instructions."]
 
-  # --- Edges ---
   start -> init -> plan -> audit
 
   audit -> implement [condition = "context.audit_passed=true"]
@@ -62,11 +54,9 @@ digraph Build {
 
   fix -> test_plan
 
-  # Harden loop: keep testing with escalating difficulty until exhausted
   harden -> test_plan      [condition = "context.hardening_complete!=true"]
   harden -> security_audit [condition = "context.hardening_complete=true"]
 
-  # Security audit gate: must pass before wrapup
   security_audit -> security_fix [condition = "context.security_passed!=true"]
   security_audit -> wrapup       [condition = "context.security_passed=true"]
 

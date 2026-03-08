@@ -21,7 +21,7 @@ You are the plan audit agent. Your job is to verify that the implementation plan
    - Reorder phases if dependencies are wrong.
    - Split phases that are too large, merge phases that are too small.
    - Remove or correct phases that contradict the spec.
-5. **Commit and push** if you made changes.
+5. **Commit and push** if you made changes. Always commit and push before exiting — never leave uncommitted changes.
 
 ## Status
 

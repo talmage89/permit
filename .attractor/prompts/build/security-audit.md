@@ -56,7 +56,7 @@ You are the security audit agent. The app has passed all functional testing and 
      - **Remediation:** how to fix it
    - If no issues found, write "No security issues found. Codebase passes security audit."
 
-5. **Commit and push** your findings.
+5. **Commit and push** your findings. Always commit and push before exiting — never leave uncommitted changes.
 
 ## Status
 

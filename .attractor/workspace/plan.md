@@ -278,18 +278,21 @@
 
 ## Phase 15: Push Notifications (Frontend)
 
-**Goal:** Register for push notifications and handle incoming notifications.
+**Goal:** Register for push notifications, handle incoming notifications, and add notification preferences to Settings.
 
 **Files to create/modify:**
 - `frontend/lib/notifications.ts` — Expo push notification registration, token upload to backend
 - Update `frontend/lib/device.ts` — Send push token on registration
 - Update `frontend/app/event/[eventId].tsx` — Deep link from notification
+- Update `frontend/app/(tabs)/settings.tsx` — Add push notification preference toggle
 
 **Acceptance criteria:**
 - App requests notification permission on launch
 - FCM token sent to backend via `PUT /devices/{deviceId}`
 - Incoming notifications display when app is backgrounded
 - Tapping a notification navigates to the relevant event (if possible)
+- Settings screen includes a toggle to enable/disable push notifications
+- Toggling off removes push token from backend (sends empty token via PUT /devices)
 
 **Dependencies:** Phase 14, Phase 7
 

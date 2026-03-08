@@ -23,8 +23,6 @@ digraph Build {
 
   fix [shape = "box", prompt = "Read .attractor/prompts/build/fix.md and follow the instructions."]
 
-  harden [shape = "box", prompt = "Read .attractor/prompts/build/harden.md and follow the instructions.", llm_model = "opus"]
-
   security_audit [shape = "box", prompt = "Read .attractor/prompts/build/security-audit.md and follow the instructions.", llm_model = "opus"]
   security_fix   [shape = "box", prompt = "Read .attractor/prompts/build/security-fix.md and follow the instructions."]
 
@@ -49,13 +47,10 @@ digraph Build {
   test_fanout -> test_d -> test_merge
   test_fanout -> test_e -> test_merge
 
-  test_merge -> harden [condition = "context.parallel.fail_count=0"]
-  test_merge -> fix    [condition = "context.parallel.fail_count!=0"]
+  test_merge -> security_audit [condition = "context.parallel.fail_count=0"]
+  test_merge -> fix            [condition = "context.parallel.fail_count!=0"]
 
   fix -> test_plan
-
-  harden -> test_plan      [condition = "context.hardening_complete!=true"]
-  harden -> security_audit [condition = "context.hardening_complete=true"]
 
   security_audit -> security_fix [condition = "context.security_passed!=true"]
   security_audit -> wrapup       [condition = "context.security_passed=true"]

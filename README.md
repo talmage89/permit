@@ -63,10 +63,7 @@ graph TD
 
     merge -->|bugs found| fix[fix]
     fix --> test_plan
-    merge -->|all pass| harden[harden]
-
-    harden -->|more to test| test_plan
-    harden -->|exhausted 8+ rounds| security_audit[security_audit]
+    merge -->|all pass| security_audit[security_audit]
 
     security_audit -->|issues| security_fix[security_fix]
     security_fix --> security_audit
@@ -79,9 +76,8 @@ graph TD
 1. **Plan + Audit** -- break spec into implementation phases, verify completeness
 2. **Implement + Review** -- build in batches of 3 phases, diff-based code review
 3. **Test (x5 parallel)** -- 5 agents test concurrently with distinct focus areas
-4. **Harden** -- escalate test difficulty across 11+ round categories, loop back to testing
-5. **Security Audit** -- OWASP-style review of the full codebase
-6. **Wrapup** -- final validation and summary
+4. **Security Audit** -- OWASP-style review of the full codebase
+5. **Wrapup** -- final validation and summary
 
 ## Docs
 

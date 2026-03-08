@@ -9,13 +9,17 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, useFocusEffect, Stack } from 'expo-router';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { api, type Event, type Group } from '../../lib/api';
 import { formatDate } from '../../lib/utils';
+import { useTheme, type Theme } from '../../lib/theme';
 import CreateEventModal from '../../components/CreateEventModal';
 
 export default function GroupDetailScreen() {
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
   const router = useRouter();
+  const theme = useTheme();
+  const s = styles(theme);
   const [group, setGroup] = useState<Group | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,8 +61,8 @@ export default function GroupDetailScreen() {
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator />
+      <View style={s.centered}>
+        <ActivityIndicator color={theme.accent} />
       </View>
     );
   }
@@ -66,46 +70,56 @@ export default function GroupDetailScreen() {
   return (
     <>
       <Stack.Screen options={{ title: group?.name ?? 'Group' }} />
-      <View style={styles.container}>
+      <View style={s.container}>
         {error && (
-          <View style={styles.errorBanner}>
-            <Text style={styles.errorText}>{error}</Text>
+          <View style={s.errorBanner}>
+            <Text style={s.errorText}>{error}</Text>
             <TouchableOpacity onPress={() => loadData()}>
-              <Text style={styles.retryText}>Retry</Text>
+              <Text style={s.retryText}>Retry</Text>
             </TouchableOpacity>
           </View>
         )}
-        <Text style={styles.subtitle}>Upcoming Events</Text>
+        <Text style={s.sectionTitle}>Upcoming Events</Text>
         <FlatList
           data={events}
           keyExtractor={(e) => e.id}
           renderItem={({ item }) => (
             <TouchableOpacity
-              style={styles.eventRow}
+              style={s.card}
               onPress={() => router.push(`/event/${item.id}?groupId=${groupId}`)}
+              activeOpacity={0.7}
             >
-              <View style={styles.eventInfo}>
-                <Text style={styles.eventTitle}>{item.title}</Text>
-                <Text style={styles.eventDate}>{formatDate(item.event_date)}</Text>
+              <View style={s.cardIcon}>
+                <Ionicons name="calendar" size={28} color={theme.accent} />
+              </View>
+              <View style={s.cardContent}>
+                <Text style={s.cardTitle}>{item.title}</Text>
+                <Text style={s.cardDate}>{formatDate(item.event_date)}</Text>
                 {item.location ? (
-                  <Text style={styles.eventLocation}>{item.location}</Text>
+                  <Text style={s.cardLocation}>{item.location}</Text>
                 ) : null}
               </View>
-              <Text style={styles.chevron}>›</Text>
+              <Ionicons name="chevron-forward" size={18} color={theme.textTertiary} />
             </TouchableOpacity>
           )}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          contentContainerStyle={events.length === 0 ? s.emptyContainer : s.listContent}
           ListEmptyComponent={
-            <Text style={styles.empty}>No events yet. Create the first one!</Text>
+            <View style={s.emptyWrap}>
+              <Ionicons name="calendar-outline" size={48} color={theme.textTertiary} />
+              <Text style={s.emptyTitle}>No events yet</Text>
+              <Text style={s.emptySub}>Create the first one!</Text>
+            </View>
           }
-          style={styles.list}
+          style={s.list}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={() => loadData(true)} />
+            <RefreshControl refreshing={refreshing} onRefresh={() => loadData(true)} tintColor={theme.accent} />
           }
         />
-        <TouchableOpacity style={styles.button} onPress={() => setCreateVisible(true)}>
-          <Text style={styles.buttonText}>Create Event</Text>
-        </TouchableOpacity>
+        <View style={s.actions}>
+          <TouchableOpacity style={s.button} onPress={() => setCreateVisible(true)} activeOpacity={0.8}>
+            <Text style={s.buttonText}>Create Event</Text>
+          </TouchableOpacity>
+        </View>
         <CreateEventModal
           groupId={groupId}
           visible={createVisible}
@@ -117,40 +131,59 @@ export default function GroupDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#fff' },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  subtitle: { fontSize: 18, fontWeight: '600', marginBottom: 12 },
-  list: { flex: 1 },
-  eventRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-  },
-  eventInfo: { flex: 1 },
-  eventTitle: { fontSize: 17, fontWeight: '600' },
-  eventDate: { fontSize: 13, color: '#555', marginTop: 2 },
-  eventLocation: { fontSize: 13, color: '#888', marginTop: 1 },
-  chevron: { fontSize: 22, color: '#ccc' },
-  separator: { height: 1, backgroundColor: '#eee' },
-  empty: { color: '#888', textAlign: 'center', marginTop: 40 },
-  button: {
-    backgroundColor: '#007AFF',
-    padding: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  buttonText: { color: '#fff', fontWeight: '600', fontSize: 16 },
-  errorBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#FFF3CD',
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 12,
-  },
-  errorText: { color: '#856404', fontSize: 13, flex: 1 },
-  retryText: { color: '#007AFF', fontSize: 13, fontWeight: '600', marginLeft: 8 },
-});
+const styles = (t: Theme) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: t.bg },
+    centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: t.bg },
+    sectionTitle: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: t.textTertiary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+      marginTop: 16,
+      marginBottom: 8,
+      marginLeft: 20,
+    },
+    list: { flex: 1 },
+    listContent: { paddingHorizontal: 16, gap: 10, paddingBottom: 8 },
+    emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    emptyWrap: { alignItems: 'center', padding: 40, gap: 8 },
+    emptyTitle: { fontSize: 17, fontWeight: '600', color: t.textSecondary },
+    emptySub: { fontSize: 14, color: t.textTertiary },
+    card: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: t.card,
+      borderRadius: 14,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: t.border,
+    },
+    cardIcon: { marginRight: 12 },
+    cardContent: { flex: 1 },
+    cardTitle: { fontSize: 16, fontWeight: '600', color: t.text },
+    cardDate: { fontSize: 13, color: t.textSecondary, marginTop: 2 },
+    cardLocation: { fontSize: 13, color: t.textTertiary, marginTop: 1 },
+    actions: { padding: 16 },
+    button: {
+      backgroundColor: t.accent,
+      padding: 15,
+      borderRadius: 12,
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    buttonText: { color: '#fff', fontWeight: '600', fontSize: 16 },
+    errorBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: t.errorBg,
+      borderRadius: 12,
+      padding: 12,
+      margin: 16,
+      marginBottom: 0,
+    },
+    errorText: { color: t.errorText, fontSize: 13, flex: 1 },
+    retryText: { color: t.accent, fontSize: 13, fontWeight: '600', marginLeft: 8 },
+  });

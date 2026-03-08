@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { api } from '../lib/api';
 import { setDisplayName, getDeviceId } from '../lib/storage';
+import { useTheme, type Theme } from '../lib/theme';
 
 interface Props {
   visible: boolean;
@@ -19,6 +20,8 @@ interface Props {
 }
 
 export default function FirstLaunchModal({ visible, onDismiss }: Props) {
+  const theme = useTheme();
+  const s = styles(theme);
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -37,7 +40,6 @@ export default function FirstLaunchModal({ visible, onDismiss }: Props) {
       }
       onDismiss();
     } catch {
-      // Save locally even if backend sync fails
       onDismiss();
     } finally {
       setSaving(false);
@@ -47,18 +49,18 @@ export default function FirstLaunchModal({ visible, onDismiss }: Props) {
   return (
     <Modal visible={visible} animationType="fade" transparent>
       <KeyboardAvoidingView
-        style={styles.backdrop}
+        style={s.backdrop}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={styles.card}>
-          <Text style={styles.title}>Welcome to Permit!</Text>
-          <Text style={styles.subtitle}>
+        <View style={s.card}>
+          <Text style={s.title}>Welcome to Permit</Text>
+          <Text style={s.subtitle}>
             Enter your display name so other group members can identify you.
           </Text>
           <TextInput
-            style={styles.input}
+            style={s.input}
             placeholder="Your name"
-            placeholderTextColor="#aaa"
+            placeholderTextColor={theme.textTertiary}
             value={name}
             onChangeText={setName}
             autoFocus
@@ -66,11 +68,12 @@ export default function FirstLaunchModal({ visible, onDismiss }: Props) {
             onSubmitEditing={handleSave}
           />
           <TouchableOpacity
-            style={[styles.button, saving && styles.buttonDisabled]}
+            style={[s.button, saving && s.buttonDisabled]}
             onPress={handleSave}
             disabled={saving}
+            activeOpacity={0.8}
           >
-            <Text style={styles.buttonText}>{saving ? 'Saving...' : 'Get Started'}</Text>
+            <Text style={s.buttonText}>{saving ? 'Saving...' : 'Get Started'}</Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -78,36 +81,41 @@ export default function FirstLaunchModal({ visible, onDismiss }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 24,
-    width: '100%',
-  },
-  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 8 },
-  subtitle: { fontSize: 14, color: '#555', marginBottom: 20 },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    marginBottom: 16,
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    padding: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: '#fff', fontWeight: '600', fontSize: 16 },
-});
+const styles = (t: Theme) =>
+  StyleSheet.create({
+    backdrop: {
+      flex: 1,
+      backgroundColor: t.backdrop,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 24,
+    },
+    card: {
+      backgroundColor: t.card,
+      borderRadius: 20,
+      padding: 28,
+      width: '100%',
+      borderWidth: 1,
+      borderColor: t.border,
+    },
+    title: { fontSize: 24, fontWeight: '700', color: t.text, marginBottom: 8 },
+    subtitle: { fontSize: 15, color: t.textSecondary, marginBottom: 24, lineHeight: 22 },
+    input: {
+      backgroundColor: t.inputBg,
+      borderRadius: 12,
+      padding: 14,
+      fontSize: 16,
+      color: t.text,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: t.border,
+    },
+    button: {
+      backgroundColor: t.accent,
+      padding: 15,
+      borderRadius: 12,
+      alignItems: 'center',
+    },
+    buttonDisabled: { opacity: 0.5 },
+    buttonText: { color: '#fff', fontWeight: '600', fontSize: 16 },
+  });

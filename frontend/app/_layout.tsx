@@ -4,10 +4,13 @@ import { StatusBar } from 'expo-status-bar';
 import * as Notifications from 'expo-notifications';
 import { initDevice, syncPushToken } from '../lib/device';
 import { getDisplayName } from '../lib/storage';
+import { useTheme, useIsDark } from '../lib/theme';
 import FirstLaunchModal from '../components/FirstLaunchModal';
 
 export default function RootLayout() {
   const router = useRouter();
+  const theme = useTheme();
+  const isDark = useIsDark();
   const [showFirstLaunch, setShowFirstLaunch] = useState(false);
   const [ready, setReady] = useState(false);
   const notificationResponseListener = useRef<Notifications.EventSubscription | null>(null);
@@ -20,12 +23,10 @@ export default function RootLayout() {
         setShowFirstLaunch(true);
       }
       setReady(true);
-      // Request push permission and upload token in background (non-blocking)
       syncPushToken().catch(() => {});
     }
     init();
 
-    // Handle notification taps to navigate to the relevant event
     notificationResponseListener.current =
       Notifications.addNotificationResponseReceivedListener((response) => {
         const data = response.notification.request.content.data as Record<string, string> | undefined;
@@ -43,12 +44,20 @@ export default function RootLayout() {
 
   return (
     <>
-      <Stack>
+      <Stack
+        screenOptions={{
+          headerStyle: { backgroundColor: theme.navBg },
+          headerTintColor: theme.accent,
+          headerTitleStyle: { color: theme.text, fontWeight: '600' },
+          headerShadowVisible: false,
+          contentStyle: { backgroundColor: theme.bg },
+        }}
+      >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="group/[groupId]" options={{ title: 'Group' }} />
-        <Stack.Screen name="event/[eventId]" options={{ title: 'Event' }} />
+        <Stack.Screen name="group/[groupId]" options={{ title: 'Group', headerBackTitle: 'Groups' }} />
+        <Stack.Screen name="event/[eventId]" options={{ title: 'Event', headerBackTitle: 'Back' }} />
       </Stack>
-      <StatusBar style="auto" />
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       {ready && (
         <FirstLaunchModal
           visible={showFirstLaunch}

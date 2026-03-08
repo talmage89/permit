@@ -11,7 +11,9 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { api, type Event } from '../lib/api';
+import { useTheme, type Theme } from '../lib/theme';
 
 interface Props {
   groupId: string;
@@ -20,25 +22,37 @@ interface Props {
   onCancel: () => void;
 }
 
+function formatDateTimeLabel(date: Date): string {
+  return date.toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 export default function CreateEventModal({ groupId, visible, onCreated, onCancel }: Props) {
+  const theme = useTheme();
+  const s = styles(theme);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [eventDate, setEventDate] = useState('');
+  const [eventDate, setEventDate] = useState<Date | null>(null);
   const [location, setLocation] = useState('');
-  const [rsvpDeadline, setRsvpDeadline] = useState('');
+  const [rsvpDeadline, setRsvpDeadline] = useState<Date | null>(null);
   const [saving, setSaving] = useState(false);
+
+  const [showEventDatePicker, setShowEventDatePicker] = useState(false);
+  const [showRsvpPicker, setShowRsvpPicker] = useState(false);
 
   function reset() {
     setTitle('');
     setDescription('');
-    setEventDate('');
+    setEventDate(null);
     setLocation('');
-    setRsvpDeadline('');
-  }
-
-  function isValidDate(value: string): boolean {
-    const d = new Date(value);
-    return !isNaN(d.getTime());
+    setRsvpDeadline(null);
+    setShowEventDatePicker(false);
+    setShowRsvpPicker(false);
   }
 
   async function handleCreate() {
@@ -46,16 +60,8 @@ export default function CreateEventModal({ groupId, visible, onCreated, onCancel
       Alert.alert('Title required', 'Please enter an event title.');
       return;
     }
-    if (!eventDate.trim()) {
-      Alert.alert('Date required', 'Please enter a date (e.g. 2025-06-15T10:00:00Z).');
-      return;
-    }
-    if (!isValidDate(eventDate.trim())) {
-      Alert.alert('Invalid date', 'Please enter a valid date (e.g. 2025-06-15T10:00:00Z).');
-      return;
-    }
-    if (rsvpDeadline.trim() && !isValidDate(rsvpDeadline.trim())) {
-      Alert.alert('Invalid RSVP deadline', 'Please enter a valid date for the RSVP deadline.');
+    if (!eventDate) {
+      Alert.alert('Date required', 'Please select a date and time for the event.');
       return;
     }
     setSaving(true);
@@ -63,9 +69,9 @@ export default function CreateEventModal({ groupId, visible, onCreated, onCancel
       const event = await api.events.create(groupId, {
         title: title.trim(),
         description: description.trim() || undefined,
-        event_date: eventDate.trim(),
+        event_date: eventDate.toISOString(),
         location: location.trim() || undefined,
-        rsvp_deadline: rsvpDeadline.trim() || undefined,
+        rsvp_deadline: rsvpDeadline ? rsvpDeadline.toISOString() : undefined,
       });
       reset();
       onCreated(event);
@@ -84,78 +90,115 @@ export default function CreateEventModal({ groupId, visible, onCreated, onCancel
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        style={s.wrapper}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={styles.header}>
+        <View style={s.header}>
           <TouchableOpacity onPress={handleCancel}>
-            <Text style={styles.headerBtn}>Cancel</Text>
+            <Text style={s.headerBtn}>Cancel</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Create Event</Text>
+          <Text style={s.headerTitle}>Create Event</Text>
           <TouchableOpacity onPress={handleCreate} disabled={saving}>
-            <Text style={[styles.headerBtn, styles.headerBtnPrimary, saving && styles.disabled]}>
+            <Text style={[s.headerBtn, s.headerBtnPrimary, saving && s.disabled]}>
               {saving ? 'Saving...' : 'Create'}
             </Text>
           </TouchableOpacity>
         </View>
-        <ScrollView style={styles.body} keyboardShouldPersistTaps="handled">
-          <View style={styles.field}>
-            <Text style={styles.label}>Title *</Text>
+        <ScrollView style={s.body} keyboardShouldPersistTaps="handled">
+          <View style={s.field}>
+            <Text style={s.label}>Title *</Text>
             <TextInput
-              style={styles.input}
+              style={s.input}
               placeholder="e.g. Soccer Practice"
-              placeholderTextColor="#aaa"
+              placeholderTextColor={theme.textTertiary}
               value={title}
               onChangeText={setTitle}
               autoFocus
               returnKeyType="next"
             />
           </View>
-          <View style={styles.field}>
-            <Text style={styles.label}>Description</Text>
+          <View style={s.field}>
+            <Text style={s.label}>Description</Text>
             <TextInput
-              style={[styles.input, styles.multiline]}
+              style={[s.input, s.multiline]}
               placeholder="Optional details"
-              placeholderTextColor="#aaa"
+              placeholderTextColor={theme.textTertiary}
               value={description}
               onChangeText={setDescription}
               multiline
               numberOfLines={3}
             />
           </View>
-          <View style={styles.field}>
-            <Text style={styles.label}>Date & Time * (ISO 8601)</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="2025-06-15T10:00:00Z"
-              placeholderTextColor="#aaa"
-              value={eventDate}
-              onChangeText={setEventDate}
-              returnKeyType="next"
-            />
+          <View style={s.field}>
+            <Text style={s.label}>Date & Time *</Text>
+            <TouchableOpacity
+              style={s.input}
+              onPress={() => { setShowEventDatePicker(true); setShowRsvpPicker(false); }}
+            >
+              <Text style={eventDate ? s.inputText : s.placeholderText}>
+                {eventDate ? formatDateTimeLabel(eventDate) : 'Select date and time'}
+              </Text>
+            </TouchableOpacity>
+            {showEventDatePicker && (
+              <DateTimePicker
+                value={eventDate ?? new Date()}
+                mode="datetime"
+                display="spinner"
+                minimumDate={new Date()}
+                onChange={(_event, selectedDate) => {
+                  if (Platform.OS === 'android') setShowEventDatePicker(false);
+                  if (selectedDate) setEventDate(selectedDate);
+                }}
+              />
+            )}
+            {showEventDatePicker && Platform.OS === 'ios' && (
+              <TouchableOpacity style={s.pickerDone} onPress={() => setShowEventDatePicker(false)}>
+                <Text style={s.pickerDoneText}>Done</Text>
+              </TouchableOpacity>
+            )}
           </View>
-          <View style={styles.field}>
-            <Text style={styles.label}>Location</Text>
+          <View style={s.field}>
+            <Text style={s.label}>Location</Text>
             <TextInput
-              style={styles.input}
+              style={s.input}
               placeholder="e.g. City Park Field 3"
-              placeholderTextColor="#aaa"
+              placeholderTextColor={theme.textTertiary}
               value={location}
               onChangeText={setLocation}
               returnKeyType="next"
             />
           </View>
-          <View style={styles.field}>
-            <Text style={styles.label}>RSVP Deadline (ISO 8601)</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="2025-06-14T20:00:00Z"
-              placeholderTextColor="#aaa"
-              value={rsvpDeadline}
-              onChangeText={setRsvpDeadline}
-              returnKeyType="done"
-              onSubmitEditing={handleCreate}
-            />
+          <View style={s.field}>
+            <Text style={s.label}>RSVP Deadline</Text>
+            <TouchableOpacity
+              style={s.input}
+              onPress={() => { setShowRsvpPicker(true); setShowEventDatePicker(false); }}
+            >
+              <Text style={rsvpDeadline ? s.inputText : s.placeholderText}>
+                {rsvpDeadline ? formatDateTimeLabel(rsvpDeadline) : 'Optional'}
+              </Text>
+            </TouchableOpacity>
+            {showRsvpPicker && (
+              <DateTimePicker
+                value={rsvpDeadline ?? eventDate ?? new Date()}
+                mode="datetime"
+                display="spinner"
+                onChange={(_event, selectedDate) => {
+                  if (Platform.OS === 'android') setShowRsvpPicker(false);
+                  if (selectedDate) setRsvpDeadline(selectedDate);
+                }}
+              />
+            )}
+            {showRsvpPicker && Platform.OS === 'ios' && (
+              <View style={s.pickerActions}>
+                <TouchableOpacity onPress={() => { setRsvpDeadline(null); setShowRsvpPicker(false); }}>
+                  <Text style={s.pickerActionText}>Clear</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setShowRsvpPicker(false)}>
+                  <Text style={[s.pickerActionText, s.pickerActionDone]}>Done</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -163,30 +206,45 @@ export default function CreateEventModal({ groupId, visible, onCreated, onCancel
   );
 }
 
-const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    paddingTop: Platform.OS === 'ios' ? 56 : 16,
-  },
-  headerTitle: { fontSize: 17, fontWeight: '600' },
-  headerBtn: { fontSize: 17, color: '#007AFF' },
-  headerBtnPrimary: { fontWeight: '600' },
-  disabled: { opacity: 0.4 },
-  body: { padding: 16 },
-  field: { marginBottom: 20 },
-  label: { fontSize: 14, color: '#555', marginBottom: 4 },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: '#fafafa',
-  },
-  multiline: { height: 80, textAlignVertical: 'top' },
-});
+const styles = (t: Theme) =>
+  StyleSheet.create({
+    wrapper: { flex: 1, backgroundColor: t.bg },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: 16,
+      borderBottomWidth: 0.5,
+      borderBottomColor: t.border,
+      paddingTop: Platform.OS === 'ios' ? 56 : 16,
+      backgroundColor: t.navBg,
+    },
+    headerTitle: { fontSize: 17, fontWeight: '600', color: t.text },
+    headerBtn: { fontSize: 17, color: t.accent },
+    headerBtnPrimary: { fontWeight: '600' },
+    disabled: { opacity: 0.4 },
+    body: { padding: 16 },
+    field: { marginBottom: 20 },
+    label: { fontSize: 14, color: t.textSecondary, marginBottom: 6 },
+    input: {
+      backgroundColor: t.inputBg,
+      borderRadius: 12,
+      padding: 14,
+      fontSize: 16,
+      color: t.text,
+      borderWidth: 1,
+      borderColor: t.border,
+    },
+    inputText: { fontSize: 16, color: t.text },
+    placeholderText: { fontSize: 16, color: t.textTertiary },
+    multiline: { height: 80, textAlignVertical: 'top' },
+    pickerDone: { alignItems: 'flex-end', paddingTop: 8 },
+    pickerDoneText: { fontSize: 16, color: t.accent, fontWeight: '600' },
+    pickerActions: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingTop: 8,
+    },
+    pickerActionText: { fontSize: 16, color: t.accent },
+    pickerActionDone: { fontWeight: '600' },
+  });

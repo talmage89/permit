@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { api } from '../lib/api';
 import { saveGroup, type StoredGroup } from '../lib/storage';
+import { useTheme, type Theme } from '../lib/theme';
 
 interface Props {
   visible: boolean;
@@ -20,6 +21,8 @@ interface Props {
 }
 
 export default function JoinGroupModal({ visible, onJoined, onCancel }: Props) {
+  const theme = useTheme();
+  const s = styles(theme);
   const [joinCode, setJoinCode] = useState('');
   const [password, setPassword] = useState('');
   const [saving, setSaving] = useState(false);
@@ -68,27 +71,27 @@ export default function JoinGroupModal({ visible, onJoined, onCancel }: Props) {
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        style={s.wrapper}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={styles.header}>
+        <View style={s.header}>
           <TouchableOpacity onPress={handleCancel}>
-            <Text style={styles.headerBtn}>Cancel</Text>
+            <Text style={s.headerBtn}>Cancel</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Join Group</Text>
+          <Text style={s.headerTitle}>Join Group</Text>
           <TouchableOpacity onPress={handleJoin} disabled={saving}>
-            <Text style={[styles.headerBtn, styles.headerBtnPrimary, saving && styles.disabled]}>
+            <Text style={[s.headerBtn, s.headerBtnPrimary, saving && s.disabled]}>
               {saving ? 'Joining...' : 'Join'}
             </Text>
           </TouchableOpacity>
         </View>
-        <View style={styles.body}>
-          <View style={styles.field}>
-            <Text style={styles.label}>Join Code *</Text>
+        <View style={s.body}>
+          <View style={s.field}>
+            <Text style={s.label}>Join Code *</Text>
             <TextInput
-              style={styles.input}
+              style={s.input}
               placeholder="8-character code"
-              placeholderTextColor="#aaa"
+              placeholderTextColor={theme.textTertiary}
               value={joinCode}
               onChangeText={(t) => setJoinCode(t.toUpperCase())}
               autoCapitalize="characters"
@@ -97,12 +100,12 @@ export default function JoinGroupModal({ visible, onJoined, onCancel }: Props) {
               maxLength={8}
             />
           </View>
-          <View style={styles.field}>
-            <Text style={styles.label}>Password *</Text>
+          <View style={s.field}>
+            <Text style={s.label}>Password *</Text>
             <TextInput
-              style={styles.input}
+              style={s.input}
               placeholder="Group password"
-              placeholderTextColor="#aaa"
+              placeholderTextColor={theme.textTertiary}
               value={password}
               onChangeText={setPassword}
               secureTextEntry
@@ -116,29 +119,33 @@ export default function JoinGroupModal({ visible, onJoined, onCancel }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    paddingTop: Platform.OS === 'ios' ? 56 : 16,
-  },
-  headerTitle: { fontSize: 17, fontWeight: '600' },
-  headerBtn: { fontSize: 17, color: '#007AFF' },
-  headerBtnPrimary: { fontWeight: '600' },
-  disabled: { opacity: 0.4 },
-  body: { padding: 16 },
-  field: { marginBottom: 20 },
-  label: { fontSize: 14, color: '#555', marginBottom: 4 },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: '#fafafa',
-  },
-});
+const styles = (t: Theme) =>
+  StyleSheet.create({
+    wrapper: { flex: 1, backgroundColor: t.bg },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: 16,
+      borderBottomWidth: 0.5,
+      borderBottomColor: t.border,
+      paddingTop: Platform.OS === 'ios' ? 56 : 16,
+      backgroundColor: t.navBg,
+    },
+    headerTitle: { fontSize: 17, fontWeight: '600', color: t.text },
+    headerBtn: { fontSize: 17, color: t.accent },
+    headerBtnPrimary: { fontWeight: '600' },
+    disabled: { opacity: 0.4 },
+    body: { padding: 16 },
+    field: { marginBottom: 20 },
+    label: { fontSize: 14, color: t.textSecondary, marginBottom: 6 },
+    input: {
+      backgroundColor: t.inputBg,
+      borderRadius: 12,
+      padding: 14,
+      fontSize: 16,
+      color: t.text,
+      borderWidth: 1,
+      borderColor: t.border,
+    },
+  });

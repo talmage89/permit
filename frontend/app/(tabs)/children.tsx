@@ -7,15 +7,21 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { api } from '../../lib/api';
 import { getChildren, saveChildren, getDeviceId, type StoredChild } from '../../lib/storage';
+import { useTheme, type Theme } from '../../lib/theme';
 import ChildForm from '../../components/ChildForm';
 
 export default function ChildrenScreen() {
+  const theme = useTheme();
+  const s = styles(theme);
   const [children, setChildren] = useState<StoredChild[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formVisible, setFormVisible] = useState(false);
   const [editTarget, setEditTarget] = useState<StoredChild | null>(null);
@@ -26,8 +32,9 @@ export default function ChildrenScreen() {
     }, []),
   );
 
-  async function loadChildren() {
-    setLoading(true);
+  async function loadChildren(isRefresh = false) {
+    if (isRefresh) setRefreshing(true);
+    else if (children.length === 0) setLoading(true);
     setError(null);
     try {
       const deviceId = await getDeviceId();
@@ -46,12 +53,24 @@ export default function ChildrenScreen() {
         setChildren(await getChildren());
       }
     } catch {
-      // Fall back to local data and show error
       const local = await getChildren();
       setChildren(local);
       setError('Could not refresh from server. Showing cached data.');
     } finally {
       setLoading(false);
+      setRefreshing(false);
+    }
+  }
+
+  function formatBirthdate(iso: string): string {
+    try {
+      return new Date(iso).toLocaleDateString(undefined, {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      });
+    } catch {
+      return iso;
     }
   }
 
@@ -125,20 +144,19 @@ export default function ChildrenScreen() {
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator />
+      <View style={s.centered}>
+        <ActivityIndicator color={theme.accent} />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Children</Text>
+    <View style={s.container}>
       {error && (
-        <View style={styles.errorBanner}>
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity onPress={loadChildren}>
-            <Text style={styles.retryText}>Retry</Text>
+        <View style={s.errorBanner}>
+          <Text style={s.errorText}>{error}</Text>
+          <TouchableOpacity onPress={() => loadChildren()}>
+            <Text style={s.retryText}>Retry</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -146,28 +164,42 @@ export default function ChildrenScreen() {
         data={children}
         keyExtractor={(c) => c.id}
         renderItem={({ item }) => (
-          <View style={styles.row}>
-            <TouchableOpacity style={styles.rowContent} onPress={() => openEdit(item)}>
-              <Text style={styles.childName}>{item.name}</Text>
-              {item.birthdate ? <Text style={styles.childMeta}>{item.birthdate}</Text> : null}
+          <TouchableOpacity style={s.card} onPress={() => openEdit(item)} activeOpacity={0.7}>
+            <View style={s.cardIcon}>
+              <Ionicons name="person-circle" size={36} color={theme.accentLight} />
+            </View>
+            <View style={s.cardContent}>
+              <Text style={s.cardTitle}>{item.name}</Text>
+              {item.birthdate ? <Text style={s.cardSub}>{formatBirthdate(item.birthdate)}</Text> : null}
               {item.allergies ? (
-                <Text style={styles.childMeta} numberOfLines={1}>
+                <Text style={s.cardSub} numberOfLines={1}>
                   Allergies: {item.allergies}
                 </Text>
               ) : null}
+            </View>
+            <TouchableOpacity style={s.deleteBtn} onPress={() => handleDelete(item)} hitSlop={8}>
+              <Ionicons name="trash-outline" size={18} color={theme.danger} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(item)}>
-              <Text style={styles.deleteBtnText}>Remove</Text>
-            </TouchableOpacity>
-          </View>
+          </TouchableOpacity>
         )}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-        ListEmptyComponent={<Text style={styles.empty}>No children added yet.</Text>}
-        style={styles.list}
+        contentContainerStyle={children.length === 0 ? s.emptyContainer : s.listContent}
+        ListEmptyComponent={
+          <View style={s.emptyWrap}>
+            <Ionicons name="happy-outline" size={48} color={theme.textTertiary} />
+            <Text style={s.emptyTitle}>No children added yet</Text>
+            <Text style={s.emptySub}>Add your children to register them for events.</Text>
+          </View>
+        }
+        style={s.list}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={() => loadChildren(true)} tintColor={theme.accent} />
+        }
       />
-      <TouchableOpacity style={styles.button} onPress={openAdd}>
-        <Text style={styles.buttonText}>Add Child</Text>
-      </TouchableOpacity>
+      <View style={s.actions}>
+        <TouchableOpacity style={s.button} onPress={openAdd} activeOpacity={0.8}>
+          <Text style={s.buttonText}>Add Child</Text>
+        </TouchableOpacity>
+      </View>
 
       <ChildForm
         visible={formVisible}
@@ -182,40 +214,49 @@ export default function ChildrenScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#fff' },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 16 },
-  errorBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#FFF3CD',
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 12,
-  },
-  errorText: { color: '#856404', fontSize: 13, flex: 1 },
-  retryText: { color: '#007AFF', fontSize: 13, fontWeight: '600', marginLeft: 8 },
-  list: { flex: 1 },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
-  rowContent: { flex: 1 },
-  childName: { fontSize: 16, fontWeight: '600' },
-  childMeta: { fontSize: 13, color: '#666', marginTop: 2 },
-  deleteBtn: { paddingHorizontal: 12, paddingVertical: 6 },
-  deleteBtnText: { color: '#FF3B30', fontSize: 14 },
-  separator: { height: 1, backgroundColor: '#eee' },
-  empty: { color: '#888', textAlign: 'center', marginTop: 40 },
-  button: {
-    backgroundColor: '#007AFF',
-    padding: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  buttonText: { color: '#fff', fontWeight: '600', fontSize: 16 },
-});
+const styles = (t: Theme) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: t.bg },
+    centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: t.bg },
+    list: { flex: 1 },
+    listContent: { padding: 16, gap: 10 },
+    emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    emptyWrap: { alignItems: 'center', padding: 40, gap: 8 },
+    emptyTitle: { fontSize: 17, fontWeight: '600', color: t.textSecondary },
+    emptySub: { fontSize: 14, color: t.textTertiary, textAlign: 'center' },
+    card: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: t.card,
+      borderRadius: 14,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: t.border,
+    },
+    cardIcon: { marginRight: 12 },
+    cardContent: { flex: 1 },
+    cardTitle: { fontSize: 16, fontWeight: '600', color: t.text },
+    cardSub: { fontSize: 13, color: t.textTertiary, marginTop: 2 },
+    deleteBtn: { padding: 8 },
+    actions: { padding: 16 },
+    button: {
+      backgroundColor: t.accent,
+      padding: 15,
+      borderRadius: 12,
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    buttonText: { color: '#fff', fontWeight: '600', fontSize: 16 },
+    errorBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: t.errorBg,
+      borderRadius: 12,
+      padding: 12,
+      marginHorizontal: 16,
+      marginTop: 16,
+    },
+    errorText: { color: t.errorText, fontSize: 13, flex: 1 },
+    retryText: { color: t.accent, fontSize: 13, fontWeight: '600', marginLeft: 8 },
+  });

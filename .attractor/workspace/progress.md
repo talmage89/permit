@@ -1,5 +1,12 @@
 # Progress
 
+## Fixes: test round 3
+- Fixed BUG-TD-1 [LOW]: Added strings.TrimSpace to child name validation in Create+Update; whitespace-only names now return 400
+- Fixed BUG-B-1 [LOW]: Added isValidUUID checks on groupId/eventId/childId path params in groups.go, events.go, children.go; non-UUID params now return 400 instead of 500
+- Fixed BUG-TA3 [LOW]: Changed UpdateDevice displayName param to *string + COALESCE in both SQL paths; partial PUT with only push_token now preserves display_name
+- Fixed BUG-C-001 [MEDIUM]: Added TO_CHAR(birthdate, 'YYYY-MM-DD') in all child SQL queries (CreateChild, UpdateChild, ListChildren); birthdate now returns YYYY-MM-DD format instead of full RFC3339 timestamp
+- Added 9 new unit tests covering all 4 bugs; go build+test pass; expo export passes
+
 ## Fixes: test round 2
 - Fixed BUG-TA1/BUG-D1 [LOW]: `PUT /devices/{id}` now validates display_name <= 255 chars, returns 400 (consistent with other Round 1 length fixes)
 - Fixed BUG-B2/BUG-TA2 [LOW]: Added `isValidUUID(deviceID)` check in `requireEventMember` before calling `IsMember`; prevents 500 when X-Device-ID or deviceId URL param is not a valid UUID on any event/registration endpoint

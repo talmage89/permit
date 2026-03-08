@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	"permit/backend/handlers"
 	"permit/backend/notifications"
 )
@@ -14,6 +15,13 @@ func New(database *sql.DB, push *notifications.PushClient) *chi.Mux {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.RequestID)
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Content-Type", "X-Device-ID"},
+		AllowCredentials: false,
+		MaxAge:           300,
+	}))
 
 	deviceHandler := &handlers.DeviceHandler{DB: database}
 	childHandler := &handlers.ChildHandler{DB: database}

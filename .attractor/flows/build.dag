@@ -1,0 +1,59 @@
+digraph Build {
+  graph [goal = "Build the Permit app per SPEC.md"]
+
+  start [shape = "Mdiamond"]
+  exit  [shape = "Msquare"]
+
+  # --- Init ---
+  init [shape = "parallelogram", tool_command = "rm -rf .attractor/workspace && mkdir -p .attractor/workspace && cp SPEC.md .attractor/workspace/spec.md && echo '# Progress' > .attractor/workspace/progress.md && git rev-parse HEAD > .attractor/workspace/base-commit"]
+
+  # --- Plan + Audit loop ---
+  plan  [shape = "box", prompt = "Read .attractor/prompts/build/plan.md and follow the instructions.", llm_model = "opus"]
+  audit [shape = "box", prompt = "Read .attractor/prompts/build/audit.md and follow the instructions.", llm_model = "opus"]
+
+  # --- Implement + Review loop ---
+  implement [shape = "box", prompt = "Read .attractor/prompts/build/implement.md and follow the instructions."]
+  review    [shape = "box", prompt = "Read .attractor/prompts/build/review.md and follow the instructions.", llm_model = "opus"]
+
+  # --- Validate: usage testing + bug fixing loop ---
+  test_plan   [shape = "box", prompt = "Read .attractor/prompts/build/test-plan.md and follow the instructions.", llm_model = "opus"]
+  test_fanout [shape = "component", max_parallel = "5"]
+  test_a      [shape = "box", prompt = "Read .attractor/prompts/build/test.md and follow the instructions."]
+  test_b      [shape = "box", prompt = "Read .attractor/prompts/build/test.md and follow the instructions."]
+  test_c      [shape = "box", prompt = "Read .attractor/prompts/build/test.md and follow the instructions."]
+  test_d      [shape = "box", prompt = "Read .attractor/prompts/build/test.md and follow the instructions."]
+  test_e      [shape = "box", prompt = "Read .attractor/prompts/build/test.md and follow the instructions."]
+  test_merge  [shape = "tripleoctagon"]
+
+  fix [shape = "box", prompt = "Read .attractor/prompts/build/fix.md and follow the instructions."]
+
+  # --- Wrapup ---
+  wrapup [shape = "box", prompt = "Read .attractor/prompts/build/wrapup.md and follow the instructions."]
+
+  # --- Edges ---
+  start -> init -> plan -> audit
+
+  audit -> implement [condition = "context.audit_passed=true"]
+  audit -> plan      [condition = "context.audit_passed!=true"]
+
+  implement -> implement [condition = "context.implementation_complete!=true"]
+  implement -> review    [condition = "context.implementation_complete=true"]
+
+  review -> test_plan [condition = "context.review_passed=true"]
+  review -> implement [condition = "context.review_passed!=true"]
+
+  test_plan -> test_fanout
+
+  test_fanout -> test_a -> test_merge
+  test_fanout -> test_b -> test_merge
+  test_fanout -> test_c -> test_merge
+  test_fanout -> test_d -> test_merge
+  test_fanout -> test_e -> test_merge
+
+  test_merge -> wrapup [condition = "context.parallel.fail_count=0"]
+  test_merge -> fix    [condition = "context.parallel.fail_count!=0"]
+
+  fix -> test_plan
+
+  wrapup -> exit
+}

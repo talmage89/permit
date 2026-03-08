@@ -12,10 +12,10 @@ type Event struct {
 	ID              string     `json:"id"`
 	GroupID         string     `json:"group_id"`
 	Title           string     `json:"title"`
-	Description     *string    `json:"description,omitempty"`
+	Description     *string    `json:"description"`
 	EventDate       time.Time  `json:"event_date"`
-	Location        *string    `json:"location,omitempty"`
-	RSVPDeadline    *time.Time `json:"rsvp_deadline,omitempty"`
+	Location        *string    `json:"location"`
+	RSVPDeadline    *time.Time `json:"rsvp_deadline"`
 	CreatedByDevice *string    `json:"created_by_device_id,omitempty"`
 	CreatedAt       time.Time  `json:"created_at"`
 	UpdatedAt       time.Time  `json:"updated_at"`

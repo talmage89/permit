@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+
+	"permit/backend/db"
 )
 
 func main() {
@@ -13,6 +15,20 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
+
+	// Connect to database (optional at startup; handlers will fail gracefully if nil)
+	database, err := db.Connect()
+	if err != nil {
+		log.Printf("Warning: database unavailable: %v", err)
+	} else {
+		log.Println("Connected to database")
+		if err := db.Migrate(database); err != nil {
+			log.Fatalf("Migration failed: %v", err)
+		}
+		log.Println("Database migrations applied")
+	}
+
+	_ = database // will be wired into router in Phase 3
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {

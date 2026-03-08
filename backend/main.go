@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"permit/backend/db"
+	"permit/backend/notifications"
 	"permit/backend/router"
 )
 
@@ -30,7 +31,8 @@ func main() {
 		database = conn
 	}
 
-	r := router.New(database)
+	fcm := notifications.NewFCMClient()
+	r := router.New(database, fcm)
 
 	log.Printf("Server listening on port %s", port)
 	if err := http.ListenAndServe(fmt.Sprintf(":%s", port), r); err != nil {

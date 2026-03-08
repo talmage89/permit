@@ -1,18 +1,22 @@
 package handlers
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"permit/backend/models"
+	"permit/backend/notifications"
 )
 
 type EventHandler struct {
-	DB *sql.DB
+	DB  *sql.DB
+	FCM *notifications.FCMClient
 }
 
 type eventRequest struct {
@@ -86,6 +90,22 @@ func (h *EventHandler) Create(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "failed to create event")
 		return
 	}
+
+	// Send push notifications to group members (async, errors are logged not fatal).
+	go func() {
+		group, err := models.GetGroup(h.DB, groupID)
+		if err != nil {
+			log.Printf("FCM notify: get group: %v", err)
+			return
+		}
+		tokens, err := models.GetGroupMemberTokens(h.DB, groupID, deviceID)
+		if err != nil {
+			log.Printf("FCM notify: get tokens: %v", err)
+			return
+		}
+		h.FCM.SendEventNotification(context.Background(), tokens, group.Name, event.Title, event.EventDate)
+	}()
+
 	writeJSON(w, http.StatusCreated, event)
 }
 

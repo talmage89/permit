@@ -190,3 +190,31 @@ func IsMember(database *sql.DB, deviceID, groupID string) (bool, error) {
 	).Scan(&exists)
 	return exists, err
 }
+
+// GetGroupMemberTokens returns FCM push tokens for all group members except excludeDeviceID.
+func GetGroupMemberTokens(database *sql.DB, groupID, excludeDeviceID string) ([]string, error) {
+	rows, err := database.Query(`
+		SELECT d.push_token
+		FROM group_memberships gm
+		JOIN devices d ON d.id = gm.device_id
+		WHERE gm.group_id = $1
+		  AND gm.device_id != $2
+		  AND d.push_token IS NOT NULL
+		  AND d.push_token != ''`,
+		groupID, excludeDeviceID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("get member tokens: %w", err)
+	}
+	defer rows.Close()
+
+	var tokens []string
+	for rows.Next() {
+		var t string
+		if err := rows.Scan(&t); err != nil {
+			return nil, err
+		}
+		tokens = append(tokens, t)
+	}
+	return tokens, rows.Err()
+}

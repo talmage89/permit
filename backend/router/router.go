@@ -6,9 +6,10 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"permit/backend/handlers"
+	"permit/backend/notifications"
 )
 
-func New(database *sql.DB) *chi.Mux {
+func New(database *sql.DB, fcm *notifications.FCMClient) *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
@@ -17,7 +18,7 @@ func New(database *sql.DB) *chi.Mux {
 	deviceHandler := &handlers.DeviceHandler{DB: database}
 	childHandler := &handlers.ChildHandler{DB: database}
 	groupHandler := &handlers.GroupHandler{DB: database}
-	eventHandler := &handlers.EventHandler{DB: database}
+	eventHandler := &handlers.EventHandler{DB: database, FCM: fcm}
 	registrationHandler := &handlers.RegistrationHandler{DB: database}
 
 	r.Get("/health", handlers.Health)

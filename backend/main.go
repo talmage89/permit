@@ -1,13 +1,14 @@
 package main
 
 import (
-	"encoding/json"
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 
 	"permit/backend/db"
+	"permit/backend/router"
 )
 
 func main() {
@@ -16,28 +17,23 @@ func main() {
 		port = "8080"
 	}
 
-	// Connect to database (optional at startup; handlers will fail gracefully if nil)
-	database, err := db.Connect()
+	var database *sql.DB
+	conn, err := db.Connect()
 	if err != nil {
 		log.Printf("Warning: database unavailable: %v", err)
 	} else {
 		log.Println("Connected to database")
-		if err := db.Migrate(database); err != nil {
+		if err := db.Migrate(conn); err != nil {
 			log.Fatalf("Migration failed: %v", err)
 		}
 		log.Println("Database migrations applied")
+		database = conn
 	}
 
-	_ = database // will be wired into router in Phase 3
-
-	mux := http.NewServeMux()
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
-	})
+	r := router.New(database)
 
 	log.Printf("Server listening on port %s", port)
-	if err := http.ListenAndServe(fmt.Sprintf(":%s", port), mux); err != nil {
+	if err := http.ListenAndServe(fmt.Sprintf(":%s", port), r); err != nil {
 		log.Fatalf("Server error: %v", err)
 	}
 }

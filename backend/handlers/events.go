@@ -38,6 +38,10 @@ func (h *EventHandler) List(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "X-Device-ID header required")
 		return
 	}
+	if !isValidUUID(deviceID) {
+		writeError(w, http.StatusBadRequest, "invalid device ID")
+		return
+	}
 	ok, err := models.IsMember(h.DB, deviceID, groupID)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to check membership")
@@ -64,6 +68,10 @@ func (h *EventHandler) Create(w http.ResponseWriter, r *http.Request) {
 	deviceID := r.Header.Get("X-Device-ID")
 	if deviceID == "" {
 		writeError(w, http.StatusBadRequest, "X-Device-ID header required")
+		return
+	}
+	if !isValidUUID(deviceID) {
+		writeError(w, http.StatusBadRequest, "invalid device ID")
 		return
 	}
 
@@ -151,6 +159,10 @@ func (h *EventHandler) Get(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "X-Device-ID header required")
 		return
 	}
+	if !isValidUUID(deviceID) {
+		writeError(w, http.StatusBadRequest, "invalid device ID")
+		return
+	}
 	ok, err := models.IsMember(h.DB, deviceID, groupID)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to check membership")
@@ -190,6 +202,10 @@ func (h *EventHandler) Update(w http.ResponseWriter, r *http.Request) {
 	deviceID := r.Header.Get("X-Device-ID")
 	if deviceID == "" {
 		writeError(w, http.StatusBadRequest, "X-Device-ID header required")
+		return
+	}
+	if !isValidUUID(deviceID) {
+		writeError(w, http.StatusBadRequest, "invalid device ID")
 		return
 	}
 
@@ -263,6 +279,10 @@ func (h *EventHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	deviceID := r.Header.Get("X-Device-ID")
 	if deviceID == "" {
 		writeError(w, http.StatusBadRequest, "X-Device-ID header required")
+		return
+	}
+	if !isValidUUID(deviceID) {
+		writeError(w, http.StatusBadRequest, "invalid device ID")
 		return
 	}
 

@@ -25,6 +25,10 @@ func (h *GroupHandler) Create(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "X-Device-ID header required")
 		return
 	}
+	if !isValidUUID(deviceID) {
+		writeError(w, http.StatusBadRequest, "invalid device ID")
+		return
+	}
 
 	var req createGroupRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -67,6 +71,10 @@ func (h *GroupHandler) Join(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "X-Device-ID header required")
 		return
 	}
+	if !isValidUUID(deviceID) {
+		writeError(w, http.StatusBadRequest, "invalid device ID")
+		return
+	}
 
 	var req joinGroupRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -81,6 +89,10 @@ func (h *GroupHandler) Join(w http.ResponseWriter, r *http.Request) {
 	}
 	if err == models.ErrInvalidPassword {
 		writeError(w, http.StatusUnauthorized, "invalid join code or password")
+		return
+	}
+	if err == models.ErrDeviceNotFound {
+		writeError(w, http.StatusNotFound, "device not found")
 		return
 	}
 	if err != nil {
@@ -131,6 +143,10 @@ func (h *GroupHandler) Leave(w http.ResponseWriter, r *http.Request) {
 	deviceID := r.Header.Get("X-Device-ID")
 	if deviceID == "" {
 		writeError(w, http.StatusBadRequest, "X-Device-ID header required")
+		return
+	}
+	if !isValidUUID(deviceID) {
+		writeError(w, http.StatusBadRequest, "invalid device ID")
 		return
 	}
 

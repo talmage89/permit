@@ -37,6 +37,10 @@ type childRequest struct {
 
 func (h *ChildHandler) Create(w http.ResponseWriter, r *http.Request) {
 	deviceID := chi.URLParam(r, "deviceId")
+	if !isValidUUID(deviceID) {
+		writeError(w, http.StatusBadRequest, "invalid device ID")
+		return
+	}
 	if r.Header.Get("X-Device-ID") != deviceID {
 		writeError(w, http.StatusForbidden, "forbidden")
 		return

@@ -435,6 +435,76 @@ func TestChildDelete_NonUUIDChildID_BadRequest(t *testing.T) {
 	}
 }
 
+// BUG-C-001: Non-UUID X-Device-ID on group/event/child endpoints must return 400, not 500.
+
+func TestGroupCreate_NonUUIDDeviceID_BadRequest(t *testing.T) {
+	h := &handlers.GroupHandler{}
+	body := `{"name":"Test Group","password":"pass"}`
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/groups", strings.NewReader(body))
+	req.Header.Set("X-Device-ID", "notauuid")
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	h.Create(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for non-UUID X-Device-ID in GroupCreate, got %d", w.Code)
+	}
+}
+
+func TestGroupJoin_NonUUIDDeviceID_BadRequest(t *testing.T) {
+	h := &handlers.GroupHandler{}
+	body := `{"join_code":"ABCD1234","password":"pass"}`
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/groups/join", strings.NewReader(body))
+	req.Header.Set("X-Device-ID", "notauuid")
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	h.Join(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for non-UUID X-Device-ID in GroupJoin, got %d", w.Code)
+	}
+}
+
+func TestGroupLeave_NonUUIDDeviceID_BadRequest(t *testing.T) {
+	h := &handlers.GroupHandler{}
+	validGroupID := "00000000-0000-0000-0000-000000000001"
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/groups/"+validGroupID+"/leave", nil)
+	req = newChiCtx(req, "groupId", validGroupID)
+	req.Header.Set("X-Device-ID", "notauuid")
+	w := httptest.NewRecorder()
+	h.Leave(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for non-UUID X-Device-ID in GroupLeave, got %d", w.Code)
+	}
+}
+
+func TestEventCreate_NonUUIDDeviceID_BadRequest(t *testing.T) {
+	h := &handlers.EventHandler{}
+	validGroupID := "00000000-0000-0000-0000-000000000001"
+	body := `{"title":"T","event_date":"2026-01-01T00:00:00Z"}`
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/groups/"+validGroupID+"/events", strings.NewReader(body))
+	req = newChiCtx(req, "groupId", validGroupID)
+	req.Header.Set("X-Device-ID", "notauuid")
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	h.Create(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for non-UUID X-Device-ID in EventCreate, got %d", w.Code)
+	}
+}
+
+func TestChildCreate_NonUUIDDeviceID_BadRequest(t *testing.T) {
+	h := &handlers.ChildHandler{}
+	body := `{"name":"Kid"}`
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/devices/notauuid/children", strings.NewReader(body))
+	req = newChiCtx(req, "deviceId", "notauuid")
+	req.Header.Set("X-Device-ID", "notauuid")
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	h.Create(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for non-UUID deviceId in ChildCreate, got %d", w.Code)
+	}
+}
+
 // BUG-TA3: Partial PUT /devices with only push_token must not return 400 (display_name omitted → nil → COALESCE preserves it).
 func TestDeviceUpdate_PushTokenOnly_PassesValidation(t *testing.T) {
 	h := &handlers.DeviceHandler{}

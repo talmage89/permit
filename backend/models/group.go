@@ -12,6 +12,7 @@ import (
 )
 
 var ErrInvalidPassword = errors.New("invalid password")
+var ErrDeviceNotFound = errors.New("device not found")
 
 type Group struct {
 	ID              string    `json:"id"`
@@ -112,6 +113,14 @@ func JoinGroup(database *sql.DB, joinCode, password, deviceID string) (*Group, e
 
 	if err := bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(password)); err != nil {
 		return nil, ErrInvalidPassword
+	}
+
+	var deviceExists bool
+	if err := database.QueryRow(`SELECT EXISTS(SELECT 1 FROM devices WHERE id = $1)`, deviceID).Scan(&deviceExists); err != nil {
+		return nil, fmt.Errorf("check device: %w", err)
+	}
+	if !deviceExists {
+		return nil, ErrDeviceNotFound
 	}
 
 	_, err = database.Exec(`

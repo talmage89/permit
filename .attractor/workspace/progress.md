@@ -1,5 +1,12 @@
 # Progress
 
+## Review Cycle 3: All 4 Findings Resolved
+- FINDING-001 [MEDIUM]: Inner catch in event/[eventId].tsx now calls setError() instead of silently ignoring
+- FINDING-002 [LOW]: Removed unused `useEffect` import from children.tsx
+- FINDING-003 [LOW]: Content-Type header only set when body is defined in api.ts request()
+- FINDING-004 [LOW]: syncPushToken() only calls API update when token is non-null
+- `go build ./... && go test ./...` passes; `npx expo export --platform web` passes
+
 ## Review Cycle 2: All 7 Findings Resolved
 - FINDING-001 [CRITICAL]: Frontend registration now sends flat `{child_id, info_updated}` matching backend struct (fixes broken registration flow)
 - FINDING-002 [HIGH]: Device update handler enforces `X-Device-ID == deviceId` ownership check

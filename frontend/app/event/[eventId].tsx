@@ -43,7 +43,7 @@ export default function EventDetailScreen() {
           setEvent(evt);
           setIsOrganizer(evt.created_by_device_id === did);
         } catch {
-          // ignore
+          setError('Failed to load event details.');
         }
       }
 

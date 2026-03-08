@@ -112,3 +112,121 @@ func TestRegister_MissingDeviceHeader_BadRequest(t *testing.T) {
 	}
 }
 
+func TestListForDevice_WrongDeviceHeader_Forbidden(t *testing.T) {
+	h := &handlers.RegistrationHandler{}
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/events/event-abc/registrations/device-abc", nil)
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("eventId", "event-abc")
+	rctx.URLParams.Add("deviceId", "device-abc")
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+	req.Header.Set("X-Device-ID", "device-xyz") // wrong device → 403 before membership check
+	w := httptest.NewRecorder()
+	h.ListForDevice(w, req)
+	if w.Code != http.StatusForbidden {
+		t.Errorf("expected 403, got %d", w.Code)
+	}
+}
+
+// --- Input validation tests ---
+
+func TestCreateChild_NameTooLong_BadRequest(t *testing.T) {
+	h := &handlers.ChildHandler{}
+	longName := strings.Repeat("A", 256)
+	body := `{"name":"` + longName + `"}`
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/devices/device-abc/children", strings.NewReader(body))
+	req = newChiCtx(req, "deviceId", "device-abc")
+	req.Header.Set("X-Device-ID", "device-abc")
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	h.Create(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", w.Code)
+	}
+}
+
+func TestCreateChild_InvalidBirthdate_BadRequest(t *testing.T) {
+	h := &handlers.ChildHandler{}
+	body := `{"name":"Kid","birthdate":"not-a-date"}`
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/devices/device-abc/children", strings.NewReader(body))
+	req = newChiCtx(req, "deviceId", "device-abc")
+	req.Header.Set("X-Device-ID", "device-abc")
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	h.Create(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", w.Code)
+	}
+}
+
+func TestCreateGroup_NameTooLong_BadRequest(t *testing.T) {
+	h := &handlers.GroupHandler{}
+	longName := strings.Repeat("X", 256)
+	body := `{"name":"` + longName + `","password":"pass"}`
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/groups", strings.NewReader(body))
+	req.Header.Set("X-Device-ID", "device-abc")
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	h.Create(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", w.Code)
+	}
+}
+
+func TestCreateGroup_PasswordTooLong_BadRequest(t *testing.T) {
+	h := &handlers.GroupHandler{}
+	longPass := strings.Repeat("X", 73)
+	body := `{"name":"TestGroup","password":"` + longPass + `"}`
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/groups", strings.NewReader(body))
+	req.Header.Set("X-Device-ID", "device-abc")
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	h.Create(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", w.Code)
+	}
+}
+
+func TestRegister_InvalidEventID_BadRequest(t *testing.T) {
+	h := &handlers.RegistrationHandler{}
+	body := `{"child_id":"child-abc","info_updated":false}`
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/events/not-a-uuid/register", strings.NewReader(body))
+	req = newChiCtx(req, "eventId", "not-a-uuid")
+	req.Header.Set("X-Device-ID", "device-abc")
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	h.Register(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", w.Code)
+	}
+}
+
+func TestRegister_InvalidChildID_BadRequest(t *testing.T) {
+	h := &handlers.RegistrationHandler{}
+	// child_id is validated before requireEventMember, so no DB needed
+	body := `{"child_id":"not-a-uuid","info_updated":false}`
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/events/event-abc/register", strings.NewReader(body))
+	req = newChiCtx(req, "eventId", "event-abc")
+	req.Header.Set("X-Device-ID", "device-abc")
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	h.Register(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", w.Code)
+	}
+}
+
+func TestUnregister_InvalidChildID_BadRequest(t *testing.T) {
+	h := &handlers.RegistrationHandler{}
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/events/event-abc/register/not-a-uuid", nil)
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("eventId", "event-abc")
+	rctx.URLParams.Add("childId", "not-a-uuid")
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+	req.Header.Set("X-Device-ID", "device-abc")
+	w := httptest.NewRecorder()
+	h.Unregister(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", w.Code)
+	}
+}
+

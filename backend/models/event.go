@@ -105,7 +105,7 @@ func GetEvent(database *sql.DB, eventID string) (*Event, error) {
 func UpdateEvent(database *sql.DB, eventID, groupID, title string, description *string, eventDate time.Time, location *string, rsvpDeadline *time.Time) (*Event, error) {
 	row := database.QueryRow(`
 		UPDATE events
-		SET title = $3, description = $4, event_date = $5, location = $6, rsvp_deadline = $7, updated_at = NOW()
+		SET title = $3, description = COALESCE($4, description), event_date = $5, location = COALESCE($6, location), rsvp_deadline = COALESCE($7, rsvp_deadline), updated_at = NOW()
 		WHERE id = $1 AND group_id = $2
 		RETURNING id, group_id, title, description, event_date, location, rsvp_deadline, created_by_device_id, created_at, updated_at`,
 		eventID, groupID, title, description, eventDate, location, rsvpDeadline,

@@ -50,6 +50,14 @@ func (h *ChildHandler) Create(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "name is required")
 		return
 	}
+	if len(req.Name) > 255 {
+		writeError(w, http.StatusBadRequest, "name must be 255 characters or fewer")
+		return
+	}
+	if req.Birthdate != nil && !isValidBirthdate(*req.Birthdate) {
+		writeError(w, http.StatusBadRequest, "birthdate must be YYYY-MM-DD or RFC3339 format")
+		return
+	}
 
 	child, err := models.CreateChild(h.DB, deviceID, req.Name, req.Birthdate, req.Allergies, req.Notes)
 	if err != nil {
@@ -74,6 +82,14 @@ func (h *ChildHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.Name == "" {
 		writeError(w, http.StatusBadRequest, "name is required")
+		return
+	}
+	if len(req.Name) > 255 {
+		writeError(w, http.StatusBadRequest, "name must be 255 characters or fewer")
+		return
+	}
+	if req.Birthdate != nil && !isValidBirthdate(*req.Birthdate) {
+		writeError(w, http.StatusBadRequest, "birthdate must be YYYY-MM-DD or RFC3339 format")
 		return
 	}
 

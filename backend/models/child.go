@@ -83,7 +83,7 @@ func CreateChild(database *sql.DB, deviceID, name string, birthdate, allergies, 
 func UpdateChild(database *sql.DB, childID, deviceID, name string, birthdate, allergies, notes *string) (*Child, error) {
 	row := database.QueryRow(`
 		UPDATE children
-		SET name = $3, birthdate = $4, allergies = $5, notes = $6, updated_at = NOW()
+		SET name = $3, birthdate = COALESCE($4, birthdate), allergies = COALESCE($5, allergies), notes = COALESCE($6, notes), updated_at = NOW()
 		WHERE id = $1 AND device_id = $2
 		RETURNING id, device_id, name, birthdate, allergies, notes, created_at, updated_at`,
 		childID, deviceID, name, birthdate, allergies, notes,

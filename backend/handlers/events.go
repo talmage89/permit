@@ -78,6 +78,10 @@ func (h *EventHandler) Create(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "title is required")
 		return
 	}
+	if len(req.Title) > 255 {
+		writeError(w, http.StatusBadRequest, "title must be 255 characters or fewer")
+		return
+	}
 	if req.EventDate == "" {
 		writeError(w, http.StatusBadRequest, "event_date is required")
 		return
@@ -182,6 +186,10 @@ func (h *EventHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 	if strings.TrimSpace(req.Title) == "" {
 		writeError(w, http.StatusBadRequest, "title is required")
+		return
+	}
+	if len(req.Title) > 255 {
+		writeError(w, http.StatusBadRequest, "title must be 255 characters or fewer")
 		return
 	}
 	if req.EventDate == "" {

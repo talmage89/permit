@@ -21,6 +21,10 @@ type registerChildRequest struct {
 // requireEventMember looks up the event and verifies deviceID is a group member.
 // Returns false and writes an error response if the check fails.
 func (h *RegistrationHandler) requireEventMember(w http.ResponseWriter, eventID, deviceID string) bool {
+	if !isValidUUID(eventID) {
+		writeError(w, http.StatusBadRequest, "invalid event id")
+		return false
+	}
 	event, err := models.GetEvent(h.DB, eventID)
 	if err == sql.ErrNoRows {
 		writeError(w, http.StatusNotFound, "event not found")
@@ -50,10 +54,6 @@ func (h *RegistrationHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.requireEventMember(w, eventID, deviceID) {
-		return
-	}
-
 	var req registerChildRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid request body")
@@ -61,6 +61,14 @@ func (h *RegistrationHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.ChildID == "" {
 		writeError(w, http.StatusBadRequest, "child_id is required")
+		return
+	}
+	if !isValidUUID(req.ChildID) {
+		writeError(w, http.StatusBadRequest, "invalid child_id")
+		return
+	}
+
+	if !h.requireEventMember(w, eventID, deviceID) {
 		return
 	}
 
@@ -86,6 +94,10 @@ func (h *RegistrationHandler) Unregister(w http.ResponseWriter, r *http.Request)
 	deviceID := r.Header.Get("X-Device-ID")
 	if deviceID == "" {
 		writeError(w, http.StatusBadRequest, "X-Device-ID header required")
+		return
+	}
+	if !isValidUUID(childID) {
+		writeError(w, http.StatusBadRequest, "invalid child id")
 		return
 	}
 
@@ -128,6 +140,9 @@ func (h *RegistrationHandler) ListForDevice(w http.ResponseWriter, r *http.Reque
 	deviceID := chi.URLParam(r, "deviceId")
 	if r.Header.Get("X-Device-ID") != deviceID {
 		writeError(w, http.StatusForbidden, "forbidden")
+		return
+	}
+	if !h.requireEventMember(w, eventID, deviceID) {
 		return
 	}
 	regs, err := models.ListRegistrationsForDevice(h.DB, eventID, deviceID)

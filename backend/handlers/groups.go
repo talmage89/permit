@@ -35,8 +35,16 @@ func (h *GroupHandler) Create(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "name is required")
 		return
 	}
+	if len(req.Name) > 255 {
+		writeError(w, http.StatusBadRequest, "name must be 255 characters or fewer")
+		return
+	}
 	if req.Password == "" {
 		writeError(w, http.StatusBadRequest, "password is required")
+		return
+	}
+	if len(req.Password) > 72 {
+		writeError(w, http.StatusBadRequest, "password must be 72 characters or fewer")
 		return
 	}
 

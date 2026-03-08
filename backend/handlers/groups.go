@@ -106,6 +106,10 @@ func (h *GroupHandler) ListForDevice(w http.ResponseWriter, r *http.Request) {
 
 func (h *GroupHandler) Get(w http.ResponseWriter, r *http.Request) {
 	groupID := chi.URLParam(r, "groupId")
+	if !isValidUUID(groupID) {
+		writeError(w, http.StatusBadRequest, "invalid group id")
+		return
+	}
 	group, err := models.GetGroup(h.DB, groupID)
 	if err == sql.ErrNoRows {
 		writeError(w, http.StatusNotFound, "group not found")
@@ -120,6 +124,10 @@ func (h *GroupHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 func (h *GroupHandler) Leave(w http.ResponseWriter, r *http.Request) {
 	groupID := chi.URLParam(r, "groupId")
+	if !isValidUUID(groupID) {
+		writeError(w, http.StatusBadRequest, "invalid group id")
+		return
+	}
 	deviceID := r.Header.Get("X-Device-ID")
 	if deviceID == "" {
 		writeError(w, http.StatusBadRequest, "X-Device-ID header required")

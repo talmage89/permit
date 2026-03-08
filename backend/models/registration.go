@@ -78,7 +78,7 @@ func UnregisterChild(database *sql.DB, eventID, childID, deviceID string) error 
 func ListRegistrations(database *sql.DB, eventID string) ([]RegistrationWithChild, error) {
 	rows, err := database.Query(`
 		SELECT r.id, r.event_id, r.child_id, r.device_id, r.info_updated, r.registered_at,
-		       c.id, c.device_id, c.name, c.birthdate, c.allergies, c.notes, c.created_at, c.updated_at
+		       c.id, c.device_id, c.name, TO_CHAR(c.birthdate, 'YYYY-MM-DD'), c.allergies, c.notes, c.created_at, c.updated_at
 		FROM registrations r
 		JOIN children c ON r.child_id = c.id
 		WHERE r.event_id = $1

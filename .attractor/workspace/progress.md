@@ -1,5 +1,24 @@
 # Progress
 
+## Fixes: test round 2
+- Fixed BUG-TA1/BUG-D1 [LOW]: `PUT /devices/{id}` now validates display_name <= 255 chars, returns 400 (consistent with other Round 1 length fixes)
+- Fixed BUG-B2/BUG-TA2 [LOW]: Added `isValidUUID(deviceID)` check in `requireEventMember` before calling `IsMember`; prevents 500 when X-Device-ID or deviceId URL param is not a valid UUID on any event/registration endpoint
+- Fixed BUG-B1 [LOW]: `UnregisterChild` now checks registration ownership before deleting; returns `ErrRegistrationForbidden` when registration exists but belongs to another device; handler returns 403 instead of misleading 404
+- Added 5 new unit tests covering all fixes; `go build ./... && go test ./...` passes; `expo export --platform web` passes
+
+## Fixes: test round 1
+- Fixed BUG-001/BUG-1 [MEDIUM]: Added `requireEventMember()` to `ListForDevice` handler — non-members now get 403 instead of 200
+- Fixed BUG-A1 [MEDIUM]: `UpdateChild` SQL uses COALESCE so partial PUT preserves birthdate/allergies/notes
+- Fixed BUG-A2 [MEDIUM]: `UpdateEvent` SQL uses COALESCE so partial PUT preserves description/location/rsvp_deadline
+- Fixed BUG-3 [LOW]: Birthdate validated as YYYY-MM-DD or RFC3339 in Create/Update child — invalid formats return 400
+- Fixed BUG-2 [LOW]: Child name > 255 chars returns 400 (length check before DB)
+- Fixed BUG-6 [LOW]: Group name > 255 chars returns 400 (length check before DB)
+- Fixed BUG-7 [LOW]: Event title > 255 chars returns 400 in Create and Update (length check before DB)
+- Fixed BUG-5 [LOW]: Group password > 72 chars returns 400 (bcrypt limit enforced in handler)
+- Fixed BUG-4/2d [LOW]: Non-UUID eventId/childId in registrations endpoints return 400 (UUID validation in requireEventMember, Register, Unregister)
+- Added 8 new unit tests covering all input validation fixes (no DB required)
+- `go build ./... && go test ./...` passes; `expo export --platform web` passes
+
 ## Review Cycle 3: All 4 Findings Resolved
 - FINDING-001 [MEDIUM]: Inner catch in event/[eventId].tsx now calls setError() instead of silently ignoring
 - FINDING-002 [LOW]: Removed unused `useEffect` import from children.tsx

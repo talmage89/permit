@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"permit/backend/models"
@@ -46,7 +47,7 @@ func (h *ChildHandler) Create(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
-	if req.Name == "" {
+	if strings.TrimSpace(req.Name) == "" {
 		writeError(w, http.StatusBadRequest, "name is required")
 		return
 	}
@@ -70,6 +71,10 @@ func (h *ChildHandler) Create(w http.ResponseWriter, r *http.Request) {
 func (h *ChildHandler) Update(w http.ResponseWriter, r *http.Request) {
 	deviceID := chi.URLParam(r, "deviceId")
 	childID := chi.URLParam(r, "childId")
+	if !isValidUUID(childID) {
+		writeError(w, http.StatusBadRequest, "invalid child id")
+		return
+	}
 	if r.Header.Get("X-Device-ID") != deviceID {
 		writeError(w, http.StatusForbidden, "forbidden")
 		return
@@ -80,7 +85,7 @@ func (h *ChildHandler) Update(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
-	if req.Name == "" {
+	if strings.TrimSpace(req.Name) == "" {
 		writeError(w, http.StatusBadRequest, "name is required")
 		return
 	}
@@ -108,6 +113,10 @@ func (h *ChildHandler) Update(w http.ResponseWriter, r *http.Request) {
 func (h *ChildHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	deviceID := chi.URLParam(r, "deviceId")
 	childID := chi.URLParam(r, "childId")
+	if !isValidUUID(childID) {
+		writeError(w, http.StatusBadRequest, "invalid child id")
+		return
+	}
 	if r.Header.Get("X-Device-ID") != deviceID {
 		writeError(w, http.StatusForbidden, "forbidden")
 		return

@@ -29,6 +29,10 @@ type eventRequest struct {
 
 func (h *EventHandler) List(w http.ResponseWriter, r *http.Request) {
 	groupID := chi.URLParam(r, "groupId")
+	if !isValidUUID(groupID) {
+		writeError(w, http.StatusBadRequest, "invalid group id")
+		return
+	}
 	deviceID := r.Header.Get("X-Device-ID")
 	if deviceID == "" {
 		writeError(w, http.StatusBadRequest, "X-Device-ID header required")
@@ -53,6 +57,10 @@ func (h *EventHandler) List(w http.ResponseWriter, r *http.Request) {
 
 func (h *EventHandler) Create(w http.ResponseWriter, r *http.Request) {
 	groupID := chi.URLParam(r, "groupId")
+	if !isValidUUID(groupID) {
+		writeError(w, http.StatusBadRequest, "invalid group id")
+		return
+	}
 	deviceID := r.Header.Get("X-Device-ID")
 	if deviceID == "" {
 		writeError(w, http.StatusBadRequest, "X-Device-ID header required")
@@ -130,6 +138,14 @@ func (h *EventHandler) Create(w http.ResponseWriter, r *http.Request) {
 func (h *EventHandler) Get(w http.ResponseWriter, r *http.Request) {
 	groupID := chi.URLParam(r, "groupId")
 	eventID := chi.URLParam(r, "eventId")
+	if !isValidUUID(groupID) {
+		writeError(w, http.StatusBadRequest, "invalid group id")
+		return
+	}
+	if !isValidUUID(eventID) {
+		writeError(w, http.StatusBadRequest, "invalid event id")
+		return
+	}
 	deviceID := r.Header.Get("X-Device-ID")
 	if deviceID == "" {
 		writeError(w, http.StatusBadRequest, "X-Device-ID header required")
@@ -163,6 +179,14 @@ func (h *EventHandler) Get(w http.ResponseWriter, r *http.Request) {
 func (h *EventHandler) Update(w http.ResponseWriter, r *http.Request) {
 	groupID := chi.URLParam(r, "groupId")
 	eventID := chi.URLParam(r, "eventId")
+	if !isValidUUID(groupID) {
+		writeError(w, http.StatusBadRequest, "invalid group id")
+		return
+	}
+	if !isValidUUID(eventID) {
+		writeError(w, http.StatusBadRequest, "invalid event id")
+		return
+	}
 	deviceID := r.Header.Get("X-Device-ID")
 	if deviceID == "" {
 		writeError(w, http.StatusBadRequest, "X-Device-ID header required")
@@ -228,6 +252,14 @@ func (h *EventHandler) Update(w http.ResponseWriter, r *http.Request) {
 func (h *EventHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	groupID := chi.URLParam(r, "groupId")
 	eventID := chi.URLParam(r, "eventId")
+	if !isValidUUID(groupID) {
+		writeError(w, http.StatusBadRequest, "invalid group id")
+		return
+	}
+	if !isValidUUID(eventID) {
+		writeError(w, http.StatusBadRequest, "invalid event id")
+		return
+	}
 	deviceID := r.Header.Get("X-Device-ID")
 	if deviceID == "" {
 		writeError(w, http.StatusBadRequest, "X-Device-ID header required")

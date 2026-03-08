@@ -23,7 +23,7 @@ func (h *DeviceHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 type updateDeviceRequest struct {
-	DisplayName string  `json:"display_name"`
+	DisplayName *string `json:"display_name"`
 	PushToken   *string `json:"push_token"`
 }
 
@@ -39,7 +39,7 @@ func (h *DeviceHandler) Update(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
-	if len(req.DisplayName) > 255 {
+	if req.DisplayName != nil && len(*req.DisplayName) > 255 {
 		writeError(w, http.StatusBadRequest, "display_name must be 255 characters or fewer")
 		return
 	}

@@ -34,11 +34,12 @@ func CreateDevice(database *sql.DB) (*Device, error) {
 	return device, nil
 }
 
-func UpdateDevice(database *sql.DB, deviceID, displayName string, pushToken *string) (*Device, error) {
+func UpdateDevice(database *sql.DB, deviceID string, displayName *string, pushToken *string) (*Device, error) {
 	device := &Device{}
 	var pt sql.NullString
 
-	// If pushToken is provided, update it; if empty string, set to NULL; if nil, keep existing
+	// displayName: nil = keep existing, non-nil = set to provided value (including "")
+	// pushToken: nil = keep existing, "" = clear (set NULL), non-empty = set to value
 	var err error
 	if pushToken != nil {
 		var nullablePT *string
@@ -47,7 +48,7 @@ func UpdateDevice(database *sql.DB, deviceID, displayName string, pushToken *str
 		}
 		err = database.QueryRow(`
 			UPDATE devices
-			SET display_name = $2, push_token = $3, updated_at = NOW()
+			SET display_name = COALESCE($2, display_name), push_token = $3, updated_at = NOW()
 			WHERE id = $1
 			RETURNING id, display_name, push_token, created_at, updated_at`,
 			deviceID, displayName, nullablePT,
@@ -55,7 +56,7 @@ func UpdateDevice(database *sql.DB, deviceID, displayName string, pushToken *str
 	} else {
 		err = database.QueryRow(`
 			UPDATE devices
-			SET display_name = $2, updated_at = NOW()
+			SET display_name = COALESCE($2, display_name), updated_at = NOW()
 			WHERE id = $1
 			RETURNING id, display_name, push_token, created_at, updated_at`,
 			deviceID, displayName,

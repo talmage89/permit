@@ -298,3 +298,158 @@ func TestDeviceUpdate_DisplayName255_Allowed(t *testing.T) {
 	}
 }
 
+// BUG-TD-1: Whitespace-only child name must be rejected with 400.
+func TestCreateChild_WhitespaceOnlyName_BadRequest(t *testing.T) {
+	h := &handlers.ChildHandler{}
+	body := `{"name":"   "}`
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/devices/device-abc/children", strings.NewReader(body))
+	req = newChiCtx(req, "deviceId", "device-abc")
+	req.Header.Set("X-Device-ID", "device-abc")
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	h.Create(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for whitespace-only name, got %d", w.Code)
+	}
+}
+
+func TestUpdateChild_WhitespaceOnlyName_BadRequest(t *testing.T) {
+	h := &handlers.ChildHandler{}
+	validChildID := "00000000-0000-0000-0000-000000000001"
+	body := `{"name":"   "}`
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/devices/device-abc/children/"+validChildID, strings.NewReader(body))
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("deviceId", "device-abc")
+	rctx.URLParams.Add("childId", validChildID)
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+	req.Header.Set("X-Device-ID", "device-abc")
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	h.Update(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for whitespace-only name on update, got %d", w.Code)
+	}
+}
+
+// BUG-B-1: Non-UUID path params on group/child/event endpoints must return 400.
+func TestGroupGet_NonUUIDGroupID_BadRequest(t *testing.T) {
+	h := &handlers.GroupHandler{}
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/groups/not-a-uuid", nil)
+	req = newChiCtx(req, "groupId", "not-a-uuid")
+	w := httptest.NewRecorder()
+	h.Get(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for non-UUID groupId in Get, got %d", w.Code)
+	}
+}
+
+func TestGroupLeave_NonUUIDGroupID_BadRequest(t *testing.T) {
+	h := &handlers.GroupHandler{}
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/groups/not-a-uuid/leave", nil)
+	req = newChiCtx(req, "groupId", "not-a-uuid")
+	req.Header.Set("X-Device-ID", "device-abc")
+	w := httptest.NewRecorder()
+	h.Leave(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for non-UUID groupId in Leave, got %d", w.Code)
+	}
+}
+
+func TestEventCreate_NonUUIDGroupID_BadRequest(t *testing.T) {
+	h := &handlers.EventHandler{}
+	body := `{"title":"T","event_date":"2026-01-01T00:00:00Z"}`
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/groups/not-a-uuid/events", strings.NewReader(body))
+	req = newChiCtx(req, "groupId", "not-a-uuid")
+	req.Header.Set("X-Device-ID", "device-abc")
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	h.Create(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for non-UUID groupId in EventCreate, got %d", w.Code)
+	}
+}
+
+func TestEventUpdate_NonUUIDEventID_BadRequest(t *testing.T) {
+	h := &handlers.EventHandler{}
+	validGroupID := "00000000-0000-0000-0000-000000000001"
+	body := `{"title":"T","event_date":"2026-01-01T00:00:00Z"}`
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/groups/"+validGroupID+"/events/not-a-uuid", strings.NewReader(body))
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("groupId", validGroupID)
+	rctx.URLParams.Add("eventId", "not-a-uuid")
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+	req.Header.Set("X-Device-ID", "device-abc")
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	h.Update(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for non-UUID eventId in EventUpdate, got %d", w.Code)
+	}
+}
+
+func TestEventDelete_NonUUIDEventID_BadRequest(t *testing.T) {
+	h := &handlers.EventHandler{}
+	validGroupID := "00000000-0000-0000-0000-000000000001"
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/groups/"+validGroupID+"/events/not-a-uuid", nil)
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("groupId", validGroupID)
+	rctx.URLParams.Add("eventId", "not-a-uuid")
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+	req.Header.Set("X-Device-ID", "device-abc")
+	w := httptest.NewRecorder()
+	h.Delete(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for non-UUID eventId in EventDelete, got %d", w.Code)
+	}
+}
+
+func TestChildUpdate_NonUUIDChildID_BadRequest(t *testing.T) {
+	h := &handlers.ChildHandler{}
+	body := `{"name":"Kid"}`
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/devices/device-abc/children/not-a-uuid", strings.NewReader(body))
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("deviceId", "device-abc")
+	rctx.URLParams.Add("childId", "not-a-uuid")
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+	req.Header.Set("X-Device-ID", "device-abc")
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	h.Update(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for non-UUID childId in ChildUpdate, got %d", w.Code)
+	}
+}
+
+func TestChildDelete_NonUUIDChildID_BadRequest(t *testing.T) {
+	h := &handlers.ChildHandler{}
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/devices/device-abc/children/not-a-uuid", nil)
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("deviceId", "device-abc")
+	rctx.URLParams.Add("childId", "not-a-uuid")
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+	req.Header.Set("X-Device-ID", "device-abc")
+	w := httptest.NewRecorder()
+	h.Delete(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for non-UUID childId in ChildDelete, got %d", w.Code)
+	}
+}
+
+// BUG-TA3: Partial PUT /devices with only push_token must not return 400 (display_name omitted → nil → COALESCE preserves it).
+func TestDeviceUpdate_PushTokenOnly_PassesValidation(t *testing.T) {
+	h := &handlers.DeviceHandler{}
+	body := `{"push_token":"mytoken"}`
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/devices/device-abc", strings.NewReader(body))
+	req = newChiCtx(req, "deviceId", "device-abc")
+	req.Header.Set("X-Device-ID", "device-abc")
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	func() {
+		defer func() { recover() }() // absorb nil-DB panic after validation
+		h.Update(w, req)
+	}()
+	if w.Code == http.StatusBadRequest {
+		t.Errorf("partial PUT with only push_token must not return 400")
+	}
+}
+

@@ -41,7 +41,7 @@ func scanChild(row interface {
 
 func ListChildren(database *sql.DB, deviceID string) ([]Child, error) {
 	rows, err := database.Query(`
-		SELECT id, device_id, name, birthdate, allergies, notes, created_at, updated_at
+		SELECT id, device_id, name, TO_CHAR(birthdate, 'YYYY-MM-DD'), allergies, notes, created_at, updated_at
 		FROM children
 		WHERE device_id = $1
 		ORDER BY created_at`,
@@ -70,7 +70,7 @@ func CreateChild(database *sql.DB, deviceID, name string, birthdate, allergies, 
 	row := database.QueryRow(`
 		INSERT INTO children (id, device_id, name, birthdate, allergies, notes, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
-		RETURNING id, device_id, name, birthdate, allergies, notes, created_at, updated_at`,
+		RETURNING id, device_id, name, TO_CHAR(birthdate, 'YYYY-MM-DD'), allergies, notes, created_at, updated_at`,
 		uuid.New().String(), deviceID, name, birthdate, allergies, notes,
 	)
 	c, err := scanChild(row)
@@ -85,7 +85,7 @@ func UpdateChild(database *sql.DB, childID, deviceID, name string, birthdate, al
 		UPDATE children
 		SET name = $3, birthdate = COALESCE($4, birthdate), allergies = COALESCE($5, allergies), notes = COALESCE($6, notes), updated_at = NOW()
 		WHERE id = $1 AND device_id = $2
-		RETURNING id, device_id, name, birthdate, allergies, notes, created_at, updated_at`,
+		RETURNING id, device_id, name, TO_CHAR(birthdate, 'YYYY-MM-DD'), allergies, notes, created_at, updated_at`,
 		childID, deviceID, name, birthdate, allergies, notes,
 	)
 	c, err := scanChild(row)

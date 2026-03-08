@@ -117,12 +117,13 @@ export default function EventDetailScreen() {
 
   async function handleRegister(child: Child, infoUpdated: boolean) {
     try {
-      const regs = await api.registrations.register(eventId, {
-        children: [{ child_id: child.id, info_updated: infoUpdated }],
+      const reg = await api.registrations.register(eventId, {
+        child_id: child.id,
+        info_updated: infoUpdated,
       });
       setMyRegistrations((prev) => {
         const filtered = prev.filter((r) => r.child_id !== child.id);
-        return [...filtered, ...regs];
+        return [...filtered, reg];
       });
     } catch (err: unknown) {
       Alert.alert('Error', err instanceof Error ? err.message : 'Failed to register.');

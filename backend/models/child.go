@@ -54,19 +54,9 @@ func ListChildren(database *sql.DB, deviceID string) ([]Child, error) {
 
 	var children []Child
 	for rows.Next() {
-		c := &Child{}
-		var bd, al, no sql.NullString
-		if err := rows.Scan(&c.ID, &c.DeviceID, &c.Name, &bd, &al, &no, &c.CreatedAt, &c.UpdatedAt); err != nil {
+		c, err := scanChild(rows)
+		if err != nil {
 			return nil, err
-		}
-		if bd.Valid {
-			c.Birthdate = &bd.String
-		}
-		if al.Valid {
-			c.Allergies = &al.String
-		}
-		if no.Valid {
-			c.Notes = &no.String
 		}
 		children = append(children, *c)
 	}

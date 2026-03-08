@@ -29,6 +29,10 @@ type updateDeviceRequest struct {
 
 func (h *DeviceHandler) Update(w http.ResponseWriter, r *http.Request) {
 	deviceID := chi.URLParam(r, "deviceId")
+	if r.Header.Get("X-Device-ID") != deviceID {
+		writeError(w, http.StatusForbidden, "forbidden")
+		return
+	}
 
 	var req updateDeviceRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

@@ -84,6 +84,10 @@ func (h *GroupHandler) Join(w http.ResponseWriter, r *http.Request) {
 
 func (h *GroupHandler) ListForDevice(w http.ResponseWriter, r *http.Request) {
 	deviceID := chi.URLParam(r, "deviceId")
+	if r.Header.Get("X-Device-ID") != deviceID {
+		writeError(w, http.StatusForbidden, "forbidden")
+		return
+	}
 	groups, err := models.ListGroupsForDevice(h.DB, deviceID)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to list groups")

@@ -160,8 +160,8 @@ export const api = {
   registrations: {
     register: (
       eventId: string,
-      payload: { children: Array<{ child_id: string; info_updated?: boolean }> },
-    ): Promise<Registration[]> => request('POST', `/api/v1/events/${eventId}/register`, payload),
+      payload: { child_id: string; info_updated?: boolean },
+    ): Promise<Registration> => request('POST', `/api/v1/events/${eventId}/register`, payload),
     unregister: (eventId: string, childId: string): Promise<void> =>
       request('DELETE', `/api/v1/events/${eventId}/register/${childId}`),
     listAll: (eventId: string): Promise<Registration[]> =>

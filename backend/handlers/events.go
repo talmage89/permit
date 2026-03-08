@@ -29,6 +29,20 @@ type eventRequest struct {
 
 func (h *EventHandler) List(w http.ResponseWriter, r *http.Request) {
 	groupID := chi.URLParam(r, "groupId")
+	deviceID := r.Header.Get("X-Device-ID")
+	if deviceID == "" {
+		writeError(w, http.StatusBadRequest, "X-Device-ID header required")
+		return
+	}
+	ok, err := models.IsMember(h.DB, deviceID, groupID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to check membership")
+		return
+	}
+	if !ok {
+		writeError(w, http.StatusForbidden, "not a member of this group")
+		return
+	}
 	events, err := models.ListEvents(h.DB, groupID)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to list events")
@@ -112,6 +126,20 @@ func (h *EventHandler) Create(w http.ResponseWriter, r *http.Request) {
 func (h *EventHandler) Get(w http.ResponseWriter, r *http.Request) {
 	groupID := chi.URLParam(r, "groupId")
 	eventID := chi.URLParam(r, "eventId")
+	deviceID := r.Header.Get("X-Device-ID")
+	if deviceID == "" {
+		writeError(w, http.StatusBadRequest, "X-Device-ID header required")
+		return
+	}
+	ok, err := models.IsMember(h.DB, deviceID, groupID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to check membership")
+		return
+	}
+	if !ok {
+		writeError(w, http.StatusForbidden, "not a member of this group")
+		return
+	}
 	event, err := models.GetEvent(h.DB, eventID)
 	if err == sql.ErrNoRows {
 		writeError(w, http.StatusNotFound, "event not found")

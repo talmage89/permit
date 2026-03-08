@@ -6,17 +6,21 @@
     "orientation": "portrait",
     "scheme": "permit",
     "userInterfaceStyle": "automatic",
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.permit.app"
+      "bundleIdentifier": "com.permit.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#ffffff"
       },
-      "package": "com.permit.app",
-      "googleServicesFile": "./google-services.json"
+      "package": "com.permit.app"
     },
     "web": {
       "bundler": "metro",
@@ -30,10 +34,24 @@
           "icon": "./assets/notification-icon.png",
           "color": "#ffffff"
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "3fc2ff9f-ef4b-4def-8c56-eb0e5955ded8"
+      }
+    },
+    "owner": "tppts",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/3fc2ff9f-ef4b-4def-8c56-eb0e5955ded8"
     }
   }
 }

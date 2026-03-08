@@ -27,8 +27,8 @@ func main() {
 	}
 	log.Println("Database migrations applied")
 
-	fcm := notifications.NewFCMClient()
-	r := router.New(database, fcm)
+	push := notifications.NewPushClient()
+	r := router.New(database, push)
 
 	log.Printf("Server listening on port %s", port)
 	if err := http.ListenAndServe(fmt.Sprintf(":%s", port), r); err != nil {

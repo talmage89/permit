@@ -15,8 +15,8 @@ import (
 )
 
 type EventHandler struct {
-	DB  *sql.DB
-	FCM *notifications.FCMClient
+	DB   *sql.DB
+	Push *notifications.PushClient
 }
 
 type eventRequest struct {
@@ -137,7 +137,7 @@ func (h *EventHandler) Create(w http.ResponseWriter, r *http.Request) {
 			log.Printf("FCM notify: get tokens: %v", err)
 			return
 		}
-		h.FCM.SendEventNotification(context.Background(), tokens, group.Name, event.Title, event.EventDate, event.ID, groupID)
+		h.Push.SendEventNotification(context.Background(), tokens, group.Name, event.Title, event.EventDate, event.ID, groupID)
 	}()
 
 	writeJSON(w, http.StatusCreated, event)

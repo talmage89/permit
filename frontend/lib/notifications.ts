@@ -6,6 +6,8 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
@@ -28,8 +30,8 @@ export async function registerForPushNotifications(): Promise<string | null> {
   }
 
   try {
-    const token = await Notifications.getDevicePushTokenAsync();
-    return token.data as string;
+    const token = await Notifications.getExpoPushTokenAsync();
+    return token.data;
   } catch {
     return null;
   }

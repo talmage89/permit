@@ -2,3 +2,6 @@
 backend
 server
 *.exe
+
+# Environment
+.env

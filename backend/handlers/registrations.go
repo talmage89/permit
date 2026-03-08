@@ -25,6 +25,10 @@ func (h *RegistrationHandler) requireEventMember(w http.ResponseWriter, eventID,
 		writeError(w, http.StatusBadRequest, "invalid event id")
 		return false
 	}
+	if !isValidUUID(deviceID) {
+		writeError(w, http.StatusBadRequest, "invalid device ID")
+		return false
+	}
 	event, err := models.GetEvent(h.DB, eventID)
 	if err == sql.ErrNoRows {
 		writeError(w, http.StatusNotFound, "event not found")
@@ -105,10 +109,16 @@ func (h *RegistrationHandler) Unregister(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if err := models.UnregisterChild(h.DB, eventID, childID, deviceID); err == sql.ErrNoRows {
+	err := models.UnregisterChild(h.DB, eventID, childID, deviceID)
+	if err == sql.ErrNoRows {
 		writeError(w, http.StatusNotFound, "registration not found")
 		return
-	} else if err != nil {
+	}
+	if err == models.ErrRegistrationForbidden {
+		writeError(w, http.StatusForbidden, "forbidden")
+		return
+	}
+	if err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to unregister child")
 		return
 	}

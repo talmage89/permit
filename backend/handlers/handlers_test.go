@@ -230,3 +230,71 @@ func TestUnregister_InvalidChildID_BadRequest(t *testing.T) {
 	}
 }
 
+// BUG-B2: Non-UUID X-Device-ID on event endpoints should return 400, not 500.
+func TestListAll_NonUUIDDeviceID_BadRequest(t *testing.T) {
+	h := &handlers.RegistrationHandler{}
+	// Valid UUID for eventId, non-UUID for X-Device-ID
+	validEventID := "00000000-0000-0000-0000-000000000001"
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/events/"+validEventID+"/registrations", nil)
+	req = newChiCtx(req, "eventId", validEventID)
+	req.Header.Set("X-Device-ID", "not-a-uuid")
+	w := httptest.NewRecorder()
+	h.ListAll(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", w.Code)
+	}
+}
+
+// BUG-TA2: Non-UUID deviceId URL param in ListForDevice should return 400, not 500.
+func TestListForDevice_NonUUIDDeviceID_BadRequest(t *testing.T) {
+	h := &handlers.RegistrationHandler{}
+	validEventID := "00000000-0000-0000-0000-000000000001"
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/events/"+validEventID+"/registrations/not-a-uuid", nil)
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("eventId", validEventID)
+	rctx.URLParams.Add("deviceId", "not-a-uuid")
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+	req.Header.Set("X-Device-ID", "not-a-uuid") // matches URL param → passes ownership check
+	w := httptest.NewRecorder()
+	h.ListForDevice(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", w.Code)
+	}
+}
+
+func TestDeviceUpdate_DisplayNameTooLong_BadRequest(t *testing.T) {
+	h := &handlers.DeviceHandler{}
+	longName := strings.Repeat("D", 256)
+	body := `{"display_name":"` + longName + `"}`
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/devices/device-abc", strings.NewReader(body))
+	req = newChiCtx(req, "deviceId", "device-abc")
+	req.Header.Set("X-Device-ID", "device-abc")
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	h.Update(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", w.Code)
+	}
+}
+
+func TestDeviceUpdate_DisplayName255_Allowed(t *testing.T) {
+	// Validation passes; handler proceeds to DB. With nil DB it will panic or error after validation.
+	// We only test that the 400 path is NOT triggered for 255-char name.
+	// Use a deferred recover to catch any nil-DB panic that follows.
+	h := &handlers.DeviceHandler{}
+	name255 := strings.Repeat("D", 255)
+	body := `{"display_name":"` + name255 + `"}`
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/devices/device-abc", strings.NewReader(body))
+	req = newChiCtx(req, "deviceId", "device-abc")
+	req.Header.Set("X-Device-ID", "device-abc")
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	func() {
+		defer func() { recover() }() // absorb nil-DB panic
+		h.Update(w, req)
+	}()
+	if w.Code == http.StatusBadRequest {
+		t.Errorf("255-char display_name should not return 400")
+	}
+}
+

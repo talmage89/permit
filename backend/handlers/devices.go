@@ -39,6 +39,10 @@ func (h *DeviceHandler) Update(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
+	if len(req.DisplayName) > 255 {
+		writeError(w, http.StatusBadRequest, "display_name must be 255 characters or fewer")
+		return
+	}
 
 	device, err := models.UpdateDevice(h.DB, deviceID, req.DisplayName, req.PushToken)
 	if err == sql.ErrNoRows {

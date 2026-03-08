@@ -10,6 +10,7 @@ import (
 )
 
 var ErrChildNotOwned = errors.New("child does not belong to this device")
+var ErrRegistrationForbidden = errors.New("registration belongs to another device")
 
 type Registration struct {
 	ID           string    `json:"id"`
@@ -55,19 +56,21 @@ func RegisterChild(database *sql.DB, eventID, childID, deviceID string, infoUpda
 }
 
 func UnregisterChild(database *sql.DB, eventID, childID, deviceID string) error {
-	result, err := database.Exec(`
-		DELETE FROM registrations WHERE event_id = $1 AND child_id = $2 AND device_id = $3`,
-		eventID, childID, deviceID,
-	)
+	// Check if the registration exists and who owns it.
+	var ownerDeviceID string
+	err := database.QueryRow(`SELECT device_id FROM registrations WHERE event_id = $1 AND child_id = $2`, eventID, childID).Scan(&ownerDeviceID)
+	if err == sql.ErrNoRows {
+		return sql.ErrNoRows
+	}
+	if err != nil {
+		return fmt.Errorf("check registration owner: %w", err)
+	}
+	if ownerDeviceID != deviceID {
+		return ErrRegistrationForbidden
+	}
+	_, err = database.Exec(`DELETE FROM registrations WHERE event_id = $1 AND child_id = $2`, eventID, childID)
 	if err != nil {
 		return fmt.Errorf("unregister child: %w", err)
-	}
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rows == 0 {
-		return sql.ErrNoRows
 	}
 	return nil
 }

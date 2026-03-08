@@ -32,6 +32,31 @@
 - added `golang.org/x/crypto` for bcrypt
 - `go build ./...` passes
 
+## Phase 9: Device Identity & API Client
+- `frontend/lib/storage.ts`: AsyncStorage helpers for deviceId, displayName, groups, children
+- `frontend/lib/api.ts`: typed fetch-based API client covering all endpoints; injects X-Device-ID header; BASE_URL via EXPO_PUBLIC_API_URL
+- `frontend/lib/device.ts`: initDevice() — registers device on first launch, persists UUID, falls back to local UUID if backend unreachable
+- expo export --platform web passes
+
+## Phase 8: Expo Project Setup & Navigation
+- `frontend/package.json`: Expo SDK 52, expo-router v4, all peer deps
+- `frontend/app.json`: scheme, web bundler (metro), expo-router + expo-notifications plugins
+- `frontend/tsconfig.json`, `babel.config.js`, `metro.config.js`
+- `frontend/app/_layout.tsx`: root Stack layout
+- `frontend/app/(tabs)/_layout.tsx`: tab navigator (Home, Children, Settings)
+- `frontend/app/(tabs)/index.tsx`, `children.tsx`, `settings.tsx`: placeholder screens
+- `frontend/app/group/[groupId].tsx`, `frontend/app/event/[eventId].tsx`: placeholder screens
+- `frontend/.gitignore`: excludes node_modules, dist
+- `npx expo export --platform web` passes (10 static routes)
+
+## Phase 7: Push Notifications (Backend)
+- `backend/notifications/fcm.go`: FCM v1 REST client using stdlib JWT/RSA (no new deps); graceful no-op when credentials missing
+- `backend/models/group.go`: GetGroupMemberTokens() returns push tokens of group members excluding creator
+- `backend/handlers/events.go`: async goroutine sends push notification on event creation
+- `backend/router/router.go`: accepts *notifications.FCMClient param
+- `backend/main.go`: initializes FCMClient; passes to router
+- `go build ./...` passes
+
 ## Phase 3: Device & Children API
 - `backend/models/device.go`: Device struct, CreateDevice, UpdateDevice (supports push_token update/clear)
 - `backend/models/child.go`: Child struct, ListChildren, CreateChild, UpdateChild, DeleteChild

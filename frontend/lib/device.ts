@@ -1,6 +1,7 @@
 import * as Crypto from 'expo-crypto';
 import { api, setApiDeviceId } from './api';
 import { getDeviceId, setDeviceId } from './storage';
+import { registerForPushNotifications } from './notifications';
 
 /**
  * Ensures a device ID exists locally. On first launch, registers with the
@@ -29,4 +30,21 @@ export async function initDevice(): Promise<string> {
     setApiDeviceId(id);
     return id;
   }
+}
+
+/**
+ * Registers for push notifications and uploads the token to the backend.
+ * Returns the token string, or null if unavailable/denied.
+ */
+export async function syncPushToken(): Promise<string | null> {
+  const deviceId = await getDeviceId();
+  if (!deviceId) return null;
+
+  const token = await registerForPushNotifications();
+  try {
+    await api.devices.update(deviceId, { push_token: token ?? '' });
+  } catch {
+    // Non-fatal: token sync failure doesn't break the app
+  }
+  return token;
 }

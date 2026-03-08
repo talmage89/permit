@@ -5,16 +5,20 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
+  Switch,
   Alert,
   ActivityIndicator,
 } from 'react-native';
 import { api } from '../../lib/api';
 import { getDisplayName, setDisplayName, getDeviceId } from '../../lib/storage';
+import { syncPushToken } from '../../lib/device';
 
 export default function SettingsScreen() {
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [notifLoading, setNotifLoading] = useState(false);
 
   useEffect(() => {
     getDisplayName().then((stored) => {
@@ -42,6 +46,34 @@ export default function SettingsScreen() {
       Alert.alert('Saved locally', 'Could not sync to server. Changes saved on device.');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleNotificationToggle(enabled: boolean) {
+    setNotifLoading(true);
+    try {
+      if (enabled) {
+        const token = await syncPushToken();
+        if (token) {
+          setNotificationsEnabled(true);
+        } else {
+          Alert.alert(
+            'Permission denied',
+            'Push notifications are disabled. Enable them in your device settings.',
+          );
+        }
+      } else {
+        // Clear push token from backend
+        const deviceId = await getDeviceId();
+        if (deviceId) {
+          await api.devices.update(deviceId, { push_token: '' });
+        }
+        setNotificationsEnabled(false);
+      }
+    } catch {
+      Alert.alert('Error', 'Failed to update notification settings.');
+    } finally {
+      setNotifLoading(false);
     }
   }
 
@@ -74,6 +106,22 @@ export default function SettingsScreen() {
       >
         <Text style={styles.buttonText}>{saving ? 'Saving...' : 'Save'}</Text>
       </TouchableOpacity>
+
+      <View style={styles.divider} />
+
+      <View style={styles.row}>
+        <View style={styles.rowInfo}>
+          <Text style={styles.rowLabel}>Push Notifications</Text>
+          <Text style={styles.rowSub}>
+            Get notified when new events are created in your groups
+          </Text>
+        </View>
+        <Switch
+          value={notificationsEnabled}
+          onValueChange={handleNotificationToggle}
+          disabled={notifLoading}
+        />
+      </View>
     </View>
   );
 }
@@ -88,4 +136,9 @@ const styles = StyleSheet.create({
   button: { backgroundColor: '#007AFF', padding: 14, borderRadius: 8, alignItems: 'center' },
   buttonDisabled: { opacity: 0.6 },
   buttonText: { color: '#fff', fontWeight: '600', fontSize: 16 },
+  divider: { height: 1, backgroundColor: '#eee', marginVertical: 24 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  rowInfo: { flex: 1 },
+  rowLabel: { fontSize: 16, fontWeight: '500' },
+  rowSub: { fontSize: 13, color: '#888', marginTop: 2 },
 });

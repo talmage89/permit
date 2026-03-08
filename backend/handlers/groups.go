@@ -105,3 +105,21 @@ func (h *GroupHandler) Get(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, group)
 }
+
+func (h *GroupHandler) Leave(w http.ResponseWriter, r *http.Request) {
+	groupID := chi.URLParam(r, "groupId")
+	deviceID := r.Header.Get("X-Device-ID")
+	if deviceID == "" {
+		writeError(w, http.StatusBadRequest, "X-Device-ID header required")
+		return
+	}
+
+	if err := models.LeaveGroup(h.DB, deviceID, groupID); err == sql.ErrNoRows {
+		writeError(w, http.StatusNotFound, "membership not found")
+		return
+	} else if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to leave group")
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}

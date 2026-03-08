@@ -46,6 +46,7 @@ func New(database *sql.DB, fcm *notifications.FCMClient) *chi.Mux {
 		r.Post("/groups/join", groupHandler.Join)
 		r.Route("/groups/{groupId}", func(r chi.Router) {
 			r.Get("/", groupHandler.Get)
+			r.Delete("/leave", groupHandler.Leave)
 			r.Get("/events", eventHandler.List)
 			r.Post("/events", eventHandler.Create)
 			r.Get("/events/{eventId}", eventHandler.Get)

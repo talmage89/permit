@@ -10,7 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { StoredChild } from '../lib/storage';
 
 interface Props {
@@ -27,7 +27,16 @@ export default function ChildForm({ visible, initial, onSave, onCancel }: Props)
   const [notes, setNotes] = useState(initial?.notes ?? '');
   const [saving, setSaving] = useState(false);
 
-  // Reset fields when modal opens with new initial data
+  // Reset fields whenever the modal opens or the child being edited changes.
+  useEffect(() => {
+    if (visible) {
+      setName(initial?.name ?? '');
+      setBirthdate(initial?.birthdate ?? '');
+      setAllergies(initial?.allergies ?? '');
+      setNotes(initial?.notes ?? '');
+    }
+  }, [visible, initial]);
+
   function resetToInitial() {
     setName(initial?.name ?? '');
     setBirthdate(initial?.birthdate ?? '');

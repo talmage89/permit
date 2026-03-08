@@ -15,6 +15,10 @@ type ChildHandler struct {
 
 func (h *ChildHandler) List(w http.ResponseWriter, r *http.Request) {
 	deviceID := chi.URLParam(r, "deviceId")
+	if r.Header.Get("X-Device-ID") != deviceID {
+		writeError(w, http.StatusForbidden, "forbidden")
+		return
+	}
 	children, err := models.ListChildren(h.DB, deviceID)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to list children")
@@ -32,6 +36,10 @@ type childRequest struct {
 
 func (h *ChildHandler) Create(w http.ResponseWriter, r *http.Request) {
 	deviceID := chi.URLParam(r, "deviceId")
+	if r.Header.Get("X-Device-ID") != deviceID {
+		writeError(w, http.StatusForbidden, "forbidden")
+		return
+	}
 
 	var req childRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -54,6 +62,10 @@ func (h *ChildHandler) Create(w http.ResponseWriter, r *http.Request) {
 func (h *ChildHandler) Update(w http.ResponseWriter, r *http.Request) {
 	deviceID := chi.URLParam(r, "deviceId")
 	childID := chi.URLParam(r, "childId")
+	if r.Header.Get("X-Device-ID") != deviceID {
+		writeError(w, http.StatusForbidden, "forbidden")
+		return
+	}
 
 	var req childRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -80,6 +92,10 @@ func (h *ChildHandler) Update(w http.ResponseWriter, r *http.Request) {
 func (h *ChildHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	deviceID := chi.URLParam(r, "deviceId")
 	childID := chi.URLParam(r, "childId")
+	if r.Header.Get("X-Device-ID") != deviceID {
+		writeError(w, http.StatusForbidden, "forbidden")
+		return
+	}
 
 	if err := models.DeleteChild(h.DB, childID, deviceID); err == sql.ErrNoRows {
 		writeError(w, http.StatusNotFound, "child not found")

@@ -28,8 +28,8 @@ export async function registerForPushNotifications(): Promise<string | null> {
   }
 
   try {
-    const token = await Notifications.getExpoPushTokenAsync();
-    return token.data;
+    const token = await Notifications.getDevicePushTokenAsync();
+    return token.data as string;
   } catch {
     return null;
   }

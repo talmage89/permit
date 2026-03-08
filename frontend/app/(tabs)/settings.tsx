@@ -9,6 +9,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import * as Notifications from 'expo-notifications';
 import { api } from '../../lib/api';
 import { getDisplayName, setDisplayName, getDeviceId } from '../../lib/storage';
 import { syncPushToken } from '../../lib/device';
@@ -21,10 +22,15 @@ export default function SettingsScreen() {
   const [notifLoading, setNotifLoading] = useState(false);
 
   useEffect(() => {
-    getDisplayName().then((stored) => {
+    async function init() {
+      const stored = await getDisplayName();
       setName(stored);
+      // Load actual notification permission status
+      const { status } = await Notifications.getPermissionsAsync();
+      setNotificationsEnabled(status === 'granted');
       setLoading(false);
-    });
+    }
+    init();
   }, []);
 
   async function handleSave() {

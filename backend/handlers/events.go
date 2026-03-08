@@ -103,13 +103,14 @@ func (h *EventHandler) Create(w http.ResponseWriter, r *http.Request) {
 			log.Printf("FCM notify: get tokens: %v", err)
 			return
 		}
-		h.FCM.SendEventNotification(context.Background(), tokens, group.Name, event.Title, event.EventDate)
+		h.FCM.SendEventNotification(context.Background(), tokens, group.Name, event.Title, event.EventDate, event.ID, groupID)
 	}()
 
 	writeJSON(w, http.StatusCreated, event)
 }
 
 func (h *EventHandler) Get(w http.ResponseWriter, r *http.Request) {
+	groupID := chi.URLParam(r, "groupId")
 	eventID := chi.URLParam(r, "eventId")
 	event, err := models.GetEvent(h.DB, eventID)
 	if err == sql.ErrNoRows {
@@ -118,6 +119,10 @@ func (h *EventHandler) Get(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to get event")
+		return
+	}
+	if event.GroupID != groupID {
+		writeError(w, http.StatusNotFound, "event not found")
 		return
 	}
 	writeJSON(w, http.StatusOK, event)

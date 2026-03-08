@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -18,18 +17,16 @@ func main() {
 		port = "8080"
 	}
 
-	var database *sql.DB
 	conn, err := db.Connect()
 	if err != nil {
-		log.Printf("Warning: database unavailable: %v", err)
-	} else {
-		log.Println("Connected to database")
-		if err := db.Migrate(conn); err != nil {
-			log.Fatalf("Migration failed: %v", err)
-		}
-		log.Println("Database migrations applied")
-		database = conn
+		log.Fatalf("Database unavailable: %v", err)
 	}
+	log.Println("Connected to database")
+	if err := db.Migrate(conn); err != nil {
+		log.Fatalf("Migration failed: %v", err)
+	}
+	log.Println("Database migrations applied")
+	database := conn
 
 	fcm := notifications.NewFCMClient()
 	r := router.New(database, fcm)

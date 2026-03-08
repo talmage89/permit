@@ -82,6 +82,11 @@ export default function HomeScreen() {
         text: 'Leave',
         style: 'destructive',
         onPress: async () => {
+          try {
+            await api.groups.leave(group.id);
+          } catch {
+            // Non-fatal: remove locally even if backend call fails
+          }
           await removeGroup(group.id);
           setGroups((prev) => prev.filter((g) => g.id !== group.id));
         },

@@ -70,7 +70,7 @@ func NewFCMClient() *FCMClient {
 
 // SendEventNotification sends a push notification to all given tokens.
 // Runs each send in a goroutine so it never blocks the caller.
-func (f *FCMClient) SendEventNotification(ctx context.Context, tokens []string, groupName, eventTitle string, eventDate time.Time) {
+func (f *FCMClient) SendEventNotification(ctx context.Context, tokens []string, groupName, eventTitle string, eventDate time.Time, eventID, groupID string) {
 	if f.sa == nil || len(tokens) == 0 {
 		return
 	}
@@ -87,6 +87,8 @@ func (f *FCMClient) SendEventNotification(ctx context.Context, tokens []string, 
 		"group_name":  groupName,
 		"event_title": eventTitle,
 		"event_date":  eventDate.Format(time.RFC3339),
+		"eventId":     eventID,
+		"groupId":     groupID,
 	}
 
 	for _, t := range tokens {

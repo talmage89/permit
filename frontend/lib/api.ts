@@ -123,6 +123,8 @@ export const api = {
     listForDevice: (deviceId: string): Promise<Group[]> =>
       request('GET', `/api/v1/devices/${deviceId}/groups`),
     get: (groupId: string): Promise<Group> => request('GET', `/api/v1/groups/${groupId}`),
+    leave: (groupId: string): Promise<void> =>
+      request('DELETE', `/api/v1/groups/${groupId}/leave`),
   },
 
   events: {

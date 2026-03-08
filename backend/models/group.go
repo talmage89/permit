@@ -191,6 +191,25 @@ func IsMember(database *sql.DB, deviceID, groupID string) (bool, error) {
 	return exists, err
 }
 
+// LeaveGroup removes a device's membership from a group.
+func LeaveGroup(database *sql.DB, deviceID, groupID string) error {
+	result, err := database.Exec(`
+		DELETE FROM group_memberships WHERE device_id = $1 AND group_id = $2`,
+		deviceID, groupID,
+	)
+	if err != nil {
+		return fmt.Errorf("leave group: %w", err)
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}
+
 // GetGroupMemberTokens returns FCM push tokens for all group members except excludeDeviceID.
 func GetGroupMemberTokens(database *sql.DB, groupID, excludeDeviceID string) ([]string, error) {
 	rows, err := database.Query(`

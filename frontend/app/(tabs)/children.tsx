@@ -16,6 +16,7 @@ import ChildForm from '../../components/ChildForm';
 export default function ChildrenScreen() {
   const [children, setChildren] = useState<StoredChild[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [formVisible, setFormVisible] = useState(false);
   const [editTarget, setEditTarget] = useState<StoredChild | null>(null);
 
@@ -27,6 +28,7 @@ export default function ChildrenScreen() {
 
   async function loadChildren() {
     setLoading(true);
+    setError(null);
     try {
       const deviceId = await getDeviceId();
       if (deviceId) {
@@ -44,8 +46,10 @@ export default function ChildrenScreen() {
         setChildren(await getChildren());
       }
     } catch {
-      // Fall back to local data
-      setChildren(await getChildren());
+      // Fall back to local data and show error
+      const local = await getChildren();
+      setChildren(local);
+      setError('Could not refresh from server. Showing cached data.');
     } finally {
       setLoading(false);
     }
@@ -130,6 +134,14 @@ export default function ChildrenScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Children</Text>
+      {error && (
+        <View style={styles.errorBanner}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity onPress={loadChildren}>
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      )}
       <FlatList
         data={children}
         keyExtractor={(c) => c.id}
@@ -174,6 +186,17 @@ const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, backgroundColor: '#fff' },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   title: { fontSize: 24, fontWeight: 'bold', marginBottom: 16 },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFF3CD',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 12,
+  },
+  errorText: { color: '#856404', fontSize: 13, flex: 1 },
+  retryText: { color: '#007AFF', fontSize: 13, fontWeight: '600', marginLeft: 8 },
   list: { flex: 1 },
   row: {
     flexDirection: 'row',

@@ -11,20 +11,7 @@ import {
 import { useLocalSearchParams, useFocusEffect, Stack } from 'expo-router';
 import { api, type Event, type Child, type Registration } from '../../lib/api';
 import { getDeviceId, getChildren } from '../../lib/storage';
-
-function formatDate(iso: string): string {
-  try {
-    return new Date(iso).toLocaleString(undefined, {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  } catch {
-    return iso;
-  }
-}
+import { formatDate } from '../../lib/utils';
 
 export default function EventDetailScreen() {
   const { eventId, groupId } = useLocalSearchParams<{ eventId: string; groupId?: string }>();

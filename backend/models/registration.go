@@ -2,11 +2,14 @@ package models
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 )
+
+var ErrChildNotOwned = errors.New("child does not belong to this device")
 
 type Registration struct {
 	ID           string    `json:"id"`
@@ -23,8 +26,21 @@ type RegistrationWithChild struct {
 }
 
 func RegisterChild(database *sql.DB, eventID, childID, deviceID string, infoUpdated bool) (*Registration, error) {
+	// Verify the child belongs to the calling device.
+	var ownerDeviceID string
+	err := database.QueryRow(`SELECT device_id FROM children WHERE id = $1`, childID).Scan(&ownerDeviceID)
+	if err == sql.ErrNoRows {
+		return nil, sql.ErrNoRows
+	}
+	if err != nil {
+		return nil, fmt.Errorf("verify child owner: %w", err)
+	}
+	if ownerDeviceID != deviceID {
+		return nil, ErrChildNotOwned
+	}
+
 	r := &Registration{}
-	err := database.QueryRow(`
+	err = database.QueryRow(`
 		INSERT INTO registrations (id, event_id, child_id, device_id, info_updated, registered_at)
 		VALUES ($1, $2, $3, $4, $5, NOW())
 		ON CONFLICT (event_id, child_id) DO UPDATE

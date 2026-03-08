@@ -17,6 +17,7 @@ func New(database *sql.DB) *chi.Mux {
 	deviceHandler := &handlers.DeviceHandler{DB: database}
 	childHandler := &handlers.ChildHandler{DB: database}
 	groupHandler := &handlers.GroupHandler{DB: database}
+	eventHandler := &handlers.EventHandler{DB: database}
 
 	r.Get("/health", handlers.Health)
 
@@ -34,7 +35,14 @@ func New(database *sql.DB) *chi.Mux {
 
 		r.Post("/groups", groupHandler.Create)
 		r.Post("/groups/join", groupHandler.Join)
-		r.Get("/groups/{groupId}", groupHandler.Get)
+		r.Route("/groups/{groupId}", func(r chi.Router) {
+			r.Get("/", groupHandler.Get)
+			r.Get("/events", eventHandler.List)
+			r.Post("/events", eventHandler.Create)
+			r.Get("/events/{eventId}", eventHandler.Get)
+			r.Put("/events/{eventId}", eventHandler.Update)
+			r.Delete("/events/{eventId}", eventHandler.Delete)
+		})
 	})
 
 	return r
